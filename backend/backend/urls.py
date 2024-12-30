@@ -17,6 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from api.views import authDiscord, exchangeCodeDiscord
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('auth/discord/', authDiscord),
+    path('auth/discord/token', exchangeCodeDiscord),
 ]
