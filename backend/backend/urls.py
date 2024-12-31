@@ -17,10 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from api.views import authDiscord, exchangeCodeDiscord
+from api.oauth import oauthDiscord, oauth42, oauthGitHub, \
+    exchangeCodeDiscord, exchangeCode42, exchangeCodeGitHub
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('auth/discord/', authDiscord),
-    path('auth/discord/token', exchangeCodeDiscord),
+    path('oauth/discord', oauthDiscord),
+    path('oauth/discord/token', exchangeCodeDiscord),
+    path('oauth/42', oauth42),
+    path('oauth/42/token', exchangeCode42),
+    path('oauth/github', oauthGitHub),
+    path('oauth/github/token', exchangeCodeGitHub),
 ]
