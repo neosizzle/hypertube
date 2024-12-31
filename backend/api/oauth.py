@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from urllib.parse import urlencode
+from secrets import token_urlsafe
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,8 +24,11 @@ REDIRECT_URI = 'http://localhost:3000/success'
 def oauth42(request):
     
     scope = "public"
-    state = "42" # ! change this to include one passed by caller
-    
+    state = "42" + "_" + token_urlsafe(16)
+
+    request.session['oauth_state'] = state
+    request.session.save()
+
     query_params = {
         'response_type' : 'code',
         'client_id': os.getenv('42_CLIENT_ID'),
@@ -40,9 +44,12 @@ def oauth42(request):
 @api_view(['GET'])
 def oauthGitHub(request):
     
-    state = "github"
     scope = "user:email read:user"
-    
+    state = "github" + "_" + token_urlsafe(16)
+
+    request.session['oauth_state'] = state
+    request.session.save()
+
     query_params = {
         'client_id': os.getenv('GITHUB_CLIENT_ID'),
         'redirect_uri': REDIRECT_URI,
@@ -58,8 +65,12 @@ def oauthGitHub(request):
 def oauthDiscord(request):
     
     scope = "identify email"
-    state = "discord" # ! change this to include one passed by caller
-    
+    state = "discord" + "_" + token_urlsafe(16)
+
+    request.session['oauth_state'] = state
+    request.session.save()
+    logging.info(request.session['oauth_state'])
+
     query_params = {
         'response_type' : 'code',
         'client_id': os.getenv('DISCORD_CLIENT_ID'),
@@ -77,6 +88,15 @@ def exchangeCodeDiscord(request):
     
     code = request.data.get('code')
     redirect_uri = request.data.get('redirect_uri')
+    state = request.data.get('state')
+    stored_state = request.session.get('oauth_state')
+    
+    logging.info(f"state: {state}")
+    logging.info(f"stored state: {stored_state}")
+    
+    if not state or state != stored_state:
+        return Response(data={'error': 'State does not match'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -101,6 +121,12 @@ def exchangeCode42(request):
 
     code = request.data.get('code')
     redirect_uri = request.data.get('redirect_uri')
+    
+    state = request.data.get('state')
+    stored_state = request.session.get('oauth_state')
+    if not state or state != stored_state:
+        return Response(data={'error': 'State does not match'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     data = {
         'client_id': os.getenv('42_CLIENT_ID'),
@@ -125,6 +151,13 @@ def exchangeCodeGitHub(request):
 
     code = request.data.get('code')
     redirect_uri = request.data.get('redirect_uri')
+    
+    state = request.data.get('state')
+    stored_state = request.session.get('oauth_state')
+    
+    if not state or state != stored_state:
+        return Response(data={'error': 'State does not match'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     data = {
         'client_id': os.getenv('GITHUB_CLIENT_ID'),

@@ -10,18 +10,22 @@ export default function Success() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
-    const state = urlParams.get('state')
-    if (state !== null)
-      setAuthProvider(state)
+    const state = urlParams.get('state')! // split based on my backend specs
+
+    const provider = state.split('_')[0]
+    setAuthProvider(provider)
+
     const redirect_uri = `${window.location.protocol}//${window.location.host}${window.location.pathname}`
 
-    fetch(`http://localhost:8000/oauth/${state}/token`, {
+    fetch(`http://localhost:8000/oauth/${provider}/token`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         code: code,
+        state: state,
         redirect_uri: redirect_uri
       })
     })
