@@ -102,9 +102,11 @@ To set up the backend, follow these steps:
 3. **Run the backend server**:
 
     ```bash
+    python manage.py migrate # run table migrations
+    python manage.py createsuperuser # create super user, needed for admin access
     python manage.py runserver
     ```
 
-    This will start the Django development server. By default, the backend will be available at `http://127.0.0.1:8000`.
+    This will start the Django development server. By default, the admin page will be available at `http://127.0.0.1:8000/admin`.
 
     - If you're using a different configuration (e.g., Docker or a custom port), be sure to adjust the command accordingly.
