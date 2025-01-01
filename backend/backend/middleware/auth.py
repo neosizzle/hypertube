@@ -4,7 +4,7 @@ from django.utils import timezone
 from app_users.models import AppUser, Session
 
 class AuthMiddleware:
-	non_auth_paths = [("POST", "/api/auth/login/"), ("POST", "/api/users/")] # TODO add non auth methods as well?
+	non_auth_paths = [("POST", "/api/auth/login"), ("POST", "/api/users/"), ("GET", "/api/oauth"), ("POST", "/oauth/42/token")] 
 	admin_path = "/admin" # allow all admin paths to pass, they use another auth system
 
 	def __init__(self, get_response):

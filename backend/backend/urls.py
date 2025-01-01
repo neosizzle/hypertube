@@ -21,6 +21,9 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 from app_users import views as app_users_views
 
+from api.oauth import oauthDiscord, oauth42, oauthGitHub, \
+    exchangeCodeDiscord, exchangeCode42, exchangeCodeGitHub
+
 urlpatterns = [
     path('admin/', admin.site.urls),
  
@@ -28,5 +31,5 @@ urlpatterns = [
 	path('api/users/', app_users_views.AppUserList.as_view()),
     path('api/users/<int:pk>/', app_users_views.AppUserDetail.as_view()),
     path('api/auth/login', app_users_views.AuthLogin.as_view()),
-
+    path('api/oauth',  app_users_views.OAuthProvider.as_view()),
 ]

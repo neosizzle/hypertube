@@ -8,10 +8,13 @@ from .models import AppUser
 class AppUserSerializer(serializers.Serializer):
 	id = serializers.IntegerField(read_only=True)
 	username = serializers.CharField(required=True, max_length=100, validators=[UniqueValidator(queryset=AppUser.objects.all())])
-	first_name = serializers.CharField(required=True, max_length=100)
-	last_name = serializers.CharField(required=True, max_length=100)
+	first_name = serializers.CharField(required=False, max_length=100)
+	last_name = serializers.CharField(required=False, max_length=100)
 	email = serializers.EmailField(required=False, max_length=255, validators=[UniqueValidator(queryset=AppUser.objects.all())])
 	password = serializers.CharField(required=False, max_length=255, min_length=7) # TODO make this more secure
+	ft_iden = serializers.CharField(required=False, max_length=100)
+	discord_iden = serializers.CharField(required=False, max_length=100)
+	github_iden = serializers.CharField(required=False, max_length=100)
 
 	def to_representation(self, instance):
 		representation = super().to_representation(instance)
@@ -25,6 +28,7 @@ class AppUserSerializer(serializers.Serializer):
 		"""
 		return AppUser.objects.create(**validated_data)
 
+	# TODO: support update oauth creds if needed
 	def update(self, instance, validated_data):
 		"""
 		Update and return an existing `AppUser` instance, given the validated data.
