@@ -21,9 +21,6 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 from app_users import views as app_users_views
 
-from api.oauth import oauthDiscord, oauth42, oauthGitHub, \
-    exchangeCodeDiscord, exchangeCode42, exchangeCodeGitHub
-
 urlpatterns = [
     path('admin/', admin.site.urls),
  
