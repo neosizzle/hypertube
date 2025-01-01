@@ -96,7 +96,7 @@ class AuthLogin(APIView):
 	# NOTE: This function will return none if serializer errors during new user registration by oauth (shouldnt happen under normal circumstances)
 	# NOTE: This function will purposely raise error if 3rd party auth fails in any process
 	def oauth_token_exchange(self, method, code, redirect_uri):
-		# Mapping of methods to URLs and keys
+		# per method details
 		method_details = {
 			"42": {
 				"token_url": INTRA_42_TOKEN_URL,
@@ -127,12 +127,10 @@ class AuthLogin(APIView):
 			}
 		}
 
-		# Get method-specific details
 		details = method_details.get(method)
 		if not details:
 			return None 
 
-		# Request token using client_id, client_secret, and code
 		data = {
 			'client_id': os.getenv(details['client_id_env']),
 			'client_secret': os.getenv(details['client_secret_env']),
@@ -145,11 +143,9 @@ class AuthLogin(APIView):
 			'Accept': 'application/json'
 		}
 
-		# Post request to get token
 		response = requests.post(details['token_url'], data=data, headers=headers)
 		response.raise_for_status()
 
-		# Get the access token from the response
 		token = response.json()['access_token']
 		headers = {
 			'Authorization': f'Bearer {token}'
@@ -180,111 +176,6 @@ class AuthLogin(APIView):
 			print(serializer.errors)
 			return None
 
-		# if method == "42":
-		# 	data = {
-		# 			'client_id': os.getenv('42_CLIENT_ID'),
-		# 			'client_secret': os.getenv('42_CLIENT_SECRET'),
-		# 			'grant_type': 'authorization_code',
-		# 			'code': code,
-		# 			'redirect_uri': redirect_uri
-		# 		}
-		# 	headers = {
-		# 				'Content-Type': 'application/x-www-form-urlencoded'
-		# 			}
-		# 	response = requests.post(INTRA_42_TOKEN_URL, data=data, headers=headers)
-		# 	response.raise_for_status()
-			
-		# 	token = response.json()['access_token']
-		# 	headers = {
-		# 				'Authorization': f'Bearer {token}'
-		# 			}
-		# 	response = requests.get(INTRA_42_IDEN_URL, headers=headers)
-		# 	response.raise_for_status()
-		# 	ft_iden = response.json()['login']
-		# 	try:
-		# 		user = AppUser.objects.get(ft_iden=ft_iden)
-		# 		return AppUserSerializer(user).data
-		# 	except AppUser.DoesNotExist:
-		# 		serializer = AppUserSerializer(data={
-		# 			"username": f"user{int(time.time())}",
-		# 			"ft_iden": ft_iden
-		# 		})
-
-		# 		if serializer.is_valid():
-		# 			serializer.save()
-		# 			return serializer.data
-		# 		print(serializer.errors)
-		# 		return None
-		# if method == "discord":
-		# 	data = {
-		# 			'client_id': os.getenv('DISCORD_CLIENT_ID'),
-		# 			'client_secret': os.getenv('DISCORD_CLIENT_SECRET'),
-		# 			'grant_type': 'authorization_code',
-		# 			'code': code,
-		# 			'redirect_uri': redirect_uri
-		# 		}
-		# 	headers = {
-		# 				'Content-Type': 'application/x-www-form-urlencoded'
-		# 			}
-		# 	response = requests.post(DISCORD_TOKEN_URL, data=data, headers=headers)
-		# 	response.raise_for_status()
-			
-		# 	token = response.json()['access_token']
-		# 	headers = {
-		# 				'Authorization': f'Bearer {token}'
-		# 			}
-		# 	response = requests.get(DISCORD_IDEN_URL, headers=headers)
-		# 	response.raise_for_status()
-		# 	discord_iden = response.json()['id']
-		# 	try:
-		# 		user = AppUser.objects.get(discord_iden=discord_iden)
-		# 		return AppUserSerializer(user).data
-		# 	except AppUser.DoesNotExist:
-		# 		serializer = AppUserSerializer(data={
-		# 			"username": f"user{int(time.time())}",
-		# 			"discord_iden": discord_iden
-		# 		})
-
-		# 		if serializer.is_valid():
-		# 			serializer.save()
-		# 			return serializer.data
-		# 		print(serializer.errors)
-		# 		return None	
-		# if method == "github":
-		# 	data = {
-		# 			'client_id': os.getenv('GITHUB_CLIENT_ID'),
-		# 			'client_secret': os.getenv('GITHUB_CLIENT_SECRET'),
-		# 			'code': code,
-		# 			'redirect_uri': redirect_uri
-		# 		}
-		# 	headers = {
-		# 				'Content-Type': 'application/x-www-form-urlencoded',
-		# 				'Accept': 'application/json'
-		# 			}
-		# 	response = requests.post(GITHUB_TOKEN_URL, data=data, headers=headers)
-		# 	response.raise_for_status()
-		# 	token = response.json()['access_token']
-		# 	headers = {
-		# 				'Authorization': f'Bearer {token}',
-		# 			}
-		# 	response = requests.get(GITHUB_IDEN_URL, headers=headers)
-		# 	response.raise_for_status()
-		# 	github_iden = response.json()['login']
-		# 	try:
-		# 		user = AppUser.objects.get(github_iden=github_iden)
-		# 		return AppUserSerializer(user).data
-		# 	except AppUser.DoesNotExist:
-		# 		serializer = AppUserSerializer(data={
-		# 			"username": f"user{int(time.time())}",
-		# 			"github_iden": github_iden
-		# 		})
-
-		# 		if serializer.is_valid():
-		# 			serializer.save()
-		# 			return serializer.data
-		# 		print(serializer.errors)
-		# 		return None
-	
 	def post(self, request, format=None):
 		body = request.data
 		method = body.get('method')
