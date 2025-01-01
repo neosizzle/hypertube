@@ -31,6 +31,7 @@ export default function Success() {
     })
     .catch((error) => {
       console.error(error)
+      redirect('/login')
     })
 
   }, [])
