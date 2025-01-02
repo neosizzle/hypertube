@@ -6,6 +6,7 @@ import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react"
 import { list } from "postcss";
 import Link from "next/link";
+import Head from "next/head";
 
 type SeriesData = {
   no_seasons: number
@@ -211,6 +212,29 @@ function Profile() {
   )
 }
 
+function Header() {
+  return (
+    <header className="flex flex-row top-0 sticky text-black justify-between items-center py-3 px-16 bg-gradient-to-r from-purple-200 to-[#9efcff]">
+      <div className="flex flex-row items-center justify-center space-x-4">
+        <div className="bg-clip-text inline-block font-bold text-purple-400 text-base lg:text-2xl">hypertube</div>
+        <Link href={"/browse"}>Home</Link>
+      </div>
+      <div className="flex flex-row items-center justify-center space-x-4">
+        <Search />
+        <Profile />
+      </div>
+    </header>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="flex flex-row inset-x-0 bottom-0 sticky text-black items-center py-3 px-16">
+      Footer
+    </footer>
+  )
+}
+
 export default function Browse() {
 
   // useEffect(() => {
@@ -220,36 +244,22 @@ export default function Browse() {
   // }, [])
 
   return (
-    <div className="h-screen w-screen bg-white">
-      <header className="flex flex-row top-0 sticky text-black justify-between items-center py-3 px-10 bg-gradient-to-r from-purple-200 to-[#9efcff]">
-        <div className="flex flex-row items-center justify-center space-x-4">
-          <div className="bg-clip-text inline-block font-bold text-purple-400 text-base lg:text-2xl">hypertube</div>
-          <Link href={"/browse"}>Home</Link>
-        </div>
-        <div className="flex flex-row items-center justify-center space-x-4">
-          <Search />
-          <Profile />
-        </div>
-      </header>
-      <div className="flex flex-col items-center justify-center py-10">
-        <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
-          <Card info={squid_game} />
+    <div className="h-screen w-screen bg-white flex flex-col justify-between">
+      <Header />
+      <div className="flex flex-col justify-center py-10 px-16 mb-auto">
+        <div className="space-y-3">
+          <div className="font-bold text-2xl text-black">New on hypertube</div>
+          <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+            <Card info={squid_game} />
+            <Card info={squid_game} />
+            <Card info={squid_game} />
+            <Card info={squid_game} />
+            <Card info={squid_game} />
+            <Card info={squid_game} />
+          </div>
         </div>
       </div>
-      <footer className="flex inset-x-0 bottom-0 text-black">
-        Footer
-      </footer>
+      <Footer />
     </div>
   );
 }
