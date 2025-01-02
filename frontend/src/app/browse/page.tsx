@@ -1,12 +1,10 @@
 "use client"
 
 import Image from "next/image";
-import { redirect } from "next/navigation"
-import { SyntheticEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react"
-import { list } from "postcss";
-import Link from "next/link";
-import Head from "next/head";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 
 type SeriesData = {
   no_seasons: number
@@ -105,7 +103,7 @@ function Card({ info } : { info: ShowInfo }) {
   return (
     <div className="w-24 md:w-64 h-32 relative">
       <motion.div
-      initial={{zIndex: "1"}}
+      initial={{zIndex: "0"}}
       style={{
         position: 'absolute',
         top: '50%',
@@ -114,14 +112,14 @@ function Card({ info } : { info: ShowInfo }) {
         translateY: '-50%',
         width: '100%'
       }}
-      whileHover={{scale : 1.3, zIndex: "2", transition: {duration: 0.5, ease: "backOut"}}}
+      whileHover={{scale : 1.3, zIndex: "1", transition: {duration: 0.5, ease: "backOut"}}}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      className="relative group">
-        <div className="bg-black h-32 rounded-lg group-hover:rounded-b-none relative">
+      className="relative group z-0">
+        <div className="bg-black h-32 w-64 rounded-lg group-hover:rounded-b-none relative">
           <Image src={info.cover} alt={info.title} width={50} height={50}
-          className="w-full h-full object-cover rounded-lg opacity-80"/>
-          <div className="absolute top-24 left-4 z-20 text-white font-bold">{info.title}</div>
-          <div className="absolute top-0 w-full h-full z-10 bg-gradient-to-b from-transparent to-black/70 rounded-lg"></div>
+          className="w-full h-full -z-10 object-cover rounded-lg opacity-80"/>
+          <div className="absolute top-24 left-4 z-10 text-white font-bold">{info.title}</div>
+          <div className="absolute top-0 w-full h-full z-0 bg-gradient-to-b from-transparent to-black/70 rounded-lg"></div>
         </div>
         {hover && <CardInfoExtension info={info} />}
       </motion.div>
@@ -156,85 +154,6 @@ let squid_game: ShowInfo = {
   cover: "/discord.svg"
 }
 
-function Search() {
-
-  const [isSearching, setIsSearching] = useState(false)
-  const ref = useRef<HTMLImageElement>(null)
-  
-  useEffect(() => {
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!ref.current?.contains(event.target as Node)) {
-        setIsSearching(false);
-      }
-    }
-
-    if (!isSearching) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-    
-  }, [ref])
-
-  return (
-    <div className="flex flex-row w-64 h-10 justify-end items-center overflow-hidden" ref={ref}>
-      {!isSearching && <AnimatePresence>
-        <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}>
-          <Image src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6" onClick={() => setIsSearching(true)}/>
-        </motion.div>
-      </AnimatePresence>}
-      {isSearching && <AnimatePresence>
-        <motion.div
-        initial={{ opacity: 0, x: "200%" }}
-        animate={{ opacity: 1, x: "0%" }}
-        exit={{ opacity: 0, x: "200%" }}
-        transition={{ duration: 0.3, ease: "anticipate"}}
-        className="flex flex-row w-64 h-10 rounded-md border-2 border-black p-2 space-x-2">
-          <Image src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6"/>
-          <input placeholder="Search" className="outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"></input>
-        </motion.div>
-      </AnimatePresence>}
-    </div>
-  )
-}
-
-function Profile() {
-  return (
-    <div>
-      Profile!!
-    </div>
-  )
-}
-
-function Header() {
-  return (
-    <header className="flex flex-row top-0 sticky text-black justify-between items-center py-3 px-16 bg-gradient-to-r from-purple-200 to-[#9efcff]">
-      <div className="flex flex-row items-center justify-center space-x-4">
-        <div className="bg-clip-text inline-block font-bold text-purple-400 text-base lg:text-2xl">hypertube</div>
-        <Link href={"/browse"}>Home</Link>
-      </div>
-      <div className="flex flex-row items-center justify-center space-x-4">
-        <Search />
-        <Profile />
-      </div>
-    </header>
-  )
-}
-
-function Footer() {
-  return (
-    <footer className="flex flex-row inset-x-0 bottom-0 sticky text-black items-center py-3 px-16">
-      Footer
-    </footer>
-  )
-}
-
 export default function Browse() {
 
   // useEffect(() => {
@@ -249,7 +168,7 @@ export default function Browse() {
       <div className="flex flex-col justify-center py-10 px-16 mb-auto">
         <div className="space-y-3">
           <div className="font-bold text-2xl text-black">New on hypertube</div>
-          <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
             <Card info={squid_game} />
             <Card info={squid_game} />
             <Card info={squid_game} />
