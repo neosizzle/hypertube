@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, makeUseVisualState } from "motion/react"
 import Link from "next/link"
 import Image from "next/image"
-import { isSea } from "node:sea";
 
 function Search() {
 
@@ -106,7 +105,7 @@ function Profile() {
     opacity: 0,
     transition: {
       delay: 0.5,
-      duration: 0.5
+      duration: 0.2
     },
     transitionEnd: {
       display: "none"
@@ -124,12 +123,9 @@ function Profile() {
           initial={exit}
           animate={isHover ? enter : exit}
           className="absolute top-16 right-14 bg-white rounded-lg text-black z-10">
-            <ul className="p-2 space-y-2 border-2 rounded-lg">
-              <li className="w-32"><button>Account</button></li>
-              <li className="w-32"><button>Log Out</button></li>
-              <li className="w-32"><button>Log Out</button></li>
-              <li className="w-32"><button>Log Out</button></li>
-              <li className="w-32"><button>Log Out</button></li>
+            <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
+              <li className="hover:text-gray-500"><Link href="/account">Account</Link></li>
+              <li className="hover:text-gray-500"><Link href="/login">Log Out</Link></li>
             </ul>
         </motion.div>
       </motion.div>

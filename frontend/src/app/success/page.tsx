@@ -59,8 +59,13 @@ export default function Success() {
       console.error(error)
       redirect('/login')
     })
-
   }, [])
+
+  useEffect(() => {
+    if (rawUser) {
+      redirect('/browse')
+    }
+  }, [rawUser])
 
   return (
     <div>
