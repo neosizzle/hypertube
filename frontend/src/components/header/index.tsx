@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, makeUseVisualState } from "motion/react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation";
+import { Router } from "next/router";
 
 function Search() {
 
@@ -92,6 +94,7 @@ function Profile() {
 
   const [isHover, setIsHover] = useState(false)
   const toggleHover = () => {setIsHover(!isHover)}
+  const router = useRouter()
 
   const enter = {
     opacity: 1,
@@ -111,6 +114,11 @@ function Profile() {
       display: "none"
     }
   }
+
+  const handleLogOut = () => {
+    localStorage.removeItem('token')
+    router.push('/login')
+  }
   
   return (
     <div className="flex items-center">
@@ -125,7 +133,7 @@ function Profile() {
           className="absolute top-16 right-14 bg-white rounded-lg text-black z-10">
             <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
               <li className="hover:text-gray-500"><Link href="/account">Account</Link></li>
-              <li className="hover:text-gray-500"><Link href="/login">Log Out</Link></li>
+              <li className="hover:text-gray-500"><button onClick={handleLogOut}>Log Out</button></li>
             </ul>
         </motion.div>
       </motion.div>

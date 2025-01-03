@@ -1,12 +1,17 @@
 "use client"
 
-import { redirect } from "next/navigation"
+import { redirect, useRouter } from "next/navigation"
+import { Router } from "next/router"
 import { useEffect, useState } from "react"
+
+
+// ! going to find a way to change this soon
 
 export default function Success() {
 
   const [authProvider, setAuthProvider] = useState('')
   const [rawUser, setRawUser] = useState('')
+  const router = useRouter()
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -17,23 +22,6 @@ export default function Success() {
     setAuthProvider(provider)
 
     const redirect_uri = `${window.location.protocol}//${window.location.host}${window.location.pathname}`
-
-    // fetch(`http://localhost:8000/oauth/${provider}/token`, {
-    //   method: 'POST',
-    //   credentials: 'include',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     code: code,
-    //     state: state,
-    //     redirect_uri: redirect_uri
-    //   })
-    // })
-    // .catch((error) => {
-    //   console.error(error)
-    //   redirect('/login')
-    // })
 
     fetch(`http://localhost:8000/api/auth/login`, {
       method: 'POST',
@@ -49,7 +37,7 @@ export default function Success() {
       })
     })
     .then((data) => {
-      if (!data.ok) redirect('/login')
+      if (!data.ok) router.push('/login')
       return data.json()
     })
     .then((body) => {
@@ -57,13 +45,13 @@ export default function Success() {
     })
     .catch((error) => {
       console.error(error)
-      redirect('/login')
+      router.push('/login')
     })
   }, [])
 
   useEffect(() => {
     if (rawUser) {
-      redirect('/browse')
+      router.push('/browse')
     }
   }, [rawUser])
 
