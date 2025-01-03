@@ -4,8 +4,14 @@ from django.utils import timezone
 from app_users.models import AppUser, Session
 
 class AuthMiddleware:
-	non_auth_paths = [("POST", "/api/auth/login"), ("POST", "/api/users"), ("GET", "/api/oauth"), ("POST", "/oauth/42/token")] 
+	non_auth_paths = [
+		("POST", "/api/auth/login"),
+		("POST", "/api/users"),
+		("GET", "/api/oauth"),
+		("POST", "/api/auth/otp"),
+		("POST", "/api/auth/reset")]
 	admin_path = "/admin" # allow all admin paths to pass, they use another auth system
+	media_path = "/media" # allow all media paths to pass, they are publoic
 
 	def __init__(self, get_response):
 		self.get_response = get_response
@@ -17,7 +23,7 @@ class AuthMiddleware:
 	def process_view(self, request, view_func, view_args, view_kwargs):
 		key = (request.method, request.path)
 		try:
-			if request.path.startswith(self.admin_path) or key in self.non_auth_paths or request.app_user is not None:
+			if request.path.startswith(self.admin_path) or request.path.startswith(self.media_path) or key in self.non_auth_paths or request.app_user is not None:
 				return None
 		except AttributeError: # app user is not in request
 			return HttpResponseForbidden("Token invalid")

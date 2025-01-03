@@ -26,7 +26,16 @@ urlpatterns = [
 
     # Users and auth
 	path('api/users', app_users_views.AppUserList.as_view()),
-    path('api/users/<int:pk>', app_users_views.AppUserDetail.as_view()),
+    path('api/users/picture', app_users_views.AppUserPicture.as_view()),
+    path('api/users/me', app_users_views.AppUserDetail.as_view()),
     path('api/auth/login', app_users_views.AuthLogin.as_view()),
+    path('api/auth/otp',  app_users_views.OTPRequest.as_view()),
+    path('api/auth/reset',  app_users_views.PwReset.as_view()),
     path('api/oauth',  app_users_views.OAuthProvider.as_view()),
+
 ]
+
+from django.conf import settings
+from django.conf.urls.static import static
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -8,14 +8,18 @@ from rest_framework import status
 from urllib.parse import urlencode
 from secrets import token_urlsafe
 from django.shortcuts import redirect
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from PIL import Image
 from dotenv import load_dotenv
+import yagmail
 
-from logging import info
+from logging import info, error
 
 
 load_dotenv()
 
-from app_users.models import AppUser, Session
+from app_users.models import AppUser, Session, PwResetAttempt
 from app_users.serializers import AppUserSerializer
 
 DISCORD_AUTH_URL = 'https://discord.com/oauth2/authorize'
@@ -175,7 +179,7 @@ class AuthLogin(APIView):
 				serializer.save()
 				return serializer.data
 
-			print(serializer.errors)
+			error(serializer.errors)
 			return None
 
 	def post(self, request, format=None):
@@ -259,20 +263,101 @@ class AppUserDetail(APIView):
 		except AppUser.DoesNotExist:
 			raise Http404
 
-	def get(self, request, pk, format=None):
-		app_user = self.get_object(pk)
+	def get(self, request, format=None):
+		app_user = request.app_user
 		serializer = AppUserSerializer(app_user)
 		return Response(serializer.data)
 
-	def put(self, request, pk, format=None):
-		app_user = self.get_object(pk)
+	def patch(self, request, format=None):
+		app_user = request.app_user
 		serializer = AppUserSerializer(app_user, data=request.data)
 		if serializer.is_valid():
 			serializer.save()
 			return Response(serializer.data)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-	def delete(self, request, pk, format=None):
-		app_user = self.get_object(pk)
+	def delete(self, request, format=None):
+		app_user = request.app_user
+
+		# delete profile pics
+		directory = 'profile_pics/'
+		file_names = default_storage.listdir(directory)[1]  # List only the files (not directories)
+
+		for file_name in file_names:
+			if file_name.endswith('.png') and file_name.startswith(f"{app_user.id}"):
+				file_path = os.path.join(directory, file_name)
+				if default_storage.exists(file_path):
+					default_storage.delete(file_path)
+
 		app_user.delete()
 		return Response(status=status.HTTP_204_NO_CONTENT)
+
+class AppUserPicture(APIView):
+	def post(self, request, format=None):
+		user = request.app_user
+		file = request.FILES.get('image')
+		if not file:
+			return Response({"detail": "No image uploaded."}, status=status.HTTP_400_BAD_REQUEST)
+		
+		# Check file size (max 10MB)
+		if file.size > 10 * 1024 * 1024:  # 10MB 
+			return Response({"detail": "The image is too large. Please upload an image smaller than 10MB."}, status=status.HTTP_400_BAD_REQUEST)
+
+		# Check if file is an image (using PIL to open and verify the image)
+		try:
+			image = Image.open(file)
+			image.verify()  # This will check if the file is a valid image
+		except (IOError, SyntaxError):
+			return Response({"detail": "Invalid image file."}, status=status.HTTP_400_BAD_REQUEST)
+
+		file_path = default_storage.save(f'profile_pics/{user.id}_{file.name}', ContentFile(file.read()))
+		file_url = default_storage.url(file_path)
+	
+		user.profile_picture = file_path
+		user.save()
+		return Response({"detail" : file_url}, status=status.HTTP_200_OK)
+
+class OTPRequest(APIView):
+	def post(self, request, format=None):
+		email = request.data.get("email")
+
+		try:
+			otp_req = PwResetAttempt.create_attempt_for_user(email)
+			
+			if otp_req is None:
+				return Response({"detail" : "Too many requests"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+			
+			# send email
+			token = otp_req.token
+			yag = yagmail.SMTP(user=os.getenv('EMAIL_SENDER'), password=os.getenv("EMAIL_APP_PW"))
+
+			subject = "OTP for hyperhube"
+			try:
+				yag.send(to=email, subject=subject, contents=token)
+				return Response(status=status.HTTP_200_OK)
+			except Exception as e:
+				error(f"yagmail error {e}")
+				return Response({"detail" : "Send email error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+		except ValueError:
+			return Response({"detail" : "Email is invalid"}, status=status.HTTP_400_BAD_REQUEST)
+	
+class PwReset(APIView):
+	def post(self, request, format=None):
+		new_pw = request.data.get("password")
+		otp = request.data.get("otp")
+
+		if new_pw is None or otp is None:
+			return Response({"detail" : "'password' and 'otp' are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+		# Check if OTP exists for user and is not expired
+		validated_otp_user = PwResetAttempt.validate_attempt_for_user(otp)
+		if validated_otp_user is None:
+			return Response({"detail" : "invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+		
+		# change password
+		serializer = AppUserSerializer(validated_otp_user, data={"password": new_pw, "username": validated_otp_user.username})
+		if serializer.is_valid():
+			serializer.save()
+			return Response(serializer.data)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

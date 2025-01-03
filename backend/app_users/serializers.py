@@ -15,6 +15,7 @@ class AppUserSerializer(serializers.Serializer):
 	ft_iden = serializers.CharField(required=False, max_length=100)
 	discord_iden = serializers.CharField(required=False, max_length=100)
 	github_iden = serializers.CharField(required=False, max_length=100)
+	profile_picture = serializers.ImageField(required=False, allow_null=True, default='profile_pics/default.png')
 
 	def to_representation(self, instance):
 		representation = super().to_representation(instance)
@@ -29,6 +30,7 @@ class AppUserSerializer(serializers.Serializer):
 		return AppUser.objects.create(**validated_data)
 
 	# TODO: support update oauth creds if needed
+	# NOTE: profile picture is not editable by serializer
 	def update(self, instance, validated_data):
 		"""
 		Update and return an existing `AppUser` instance, given the validated data.
