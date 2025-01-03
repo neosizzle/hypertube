@@ -18,23 +18,6 @@ export default function Success() {
 
     const redirect_uri = `${window.location.protocol}//${window.location.host}${window.location.pathname}`
 
-    // fetch(`http://localhost:8000/oauth/${provider}/token`, {
-    //   method: 'POST',
-    //   credentials: 'include',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     code: code,
-    //     state: state,
-    //     redirect_uri: redirect_uri
-    //   })
-    // })
-    // .catch((error) => {
-    //   console.error(error)
-    //   redirect('/login')
-    // })
-
     fetch(`http://localhost:8000/api/auth/login`, {
       method: 'POST',
       credentials: 'include',

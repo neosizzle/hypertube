@@ -1,5 +1,5 @@
 from django.contrib import admin
-from app_users.models import AppUser, Session
+from app_users.models import AppUser, Session, PwResetAttempt
 
 # Register your models here.
 class AppUserAdmin(admin.ModelAdmin):
@@ -11,3 +11,8 @@ class SessionAdmin(admin.ModelAdmin):
   list_display = ("token", "app_user", "expires_at")
 
 admin.site.register(Session, SessionAdmin)
+
+class PwResetAdmin(admin.ModelAdmin):
+  list_display = ("token", "app_user", "created_time")
+
+admin.site.register(PwResetAttempt, PwResetAdmin)

@@ -3,10 +3,13 @@ ansible-core==2.15.4
 asgiref==3.8.1
 bcrypt==4.2.1
 blinker==1.4
+cachetools==5.5.0
 certifi==2022.12.7
 charset-normalizer==3.1.0
 command-not-found==0.3
 cryptography==3.4.8
+cssselect==1.2.0
+cssutils==2.11.1
 dbus-python==1.2.18
 distlib==0.3.6
 distro==1.7.0
@@ -25,13 +28,16 @@ keyring==23.5.0
 launchpadlib==1.10.16
 lazr.restfulclient==0.14.4
 lazr.uri==1.0.6
+lxml==5.3.0
 MarkupSafe==2.1.3
 mercurial==6.1.1
 more-itertools==8.10.0
 netifaces==0.11.0
 oauthlib==3.2.0
 packaging==23.1
+pillow==11.1.0
 platformdirs==2.5.4
+premailer==3.10.0
 PyGObject==3.42.1
 PyJWT==2.3.0
 pyparsing==2.4.7
@@ -51,4 +57,5 @@ unattended-upgrades==0.1
 urllib3==1.26.15
 virtualenv==20.16.7
 wadllib==1.3.6
+yagmail==0.15.293
 zipp==1.0.0
