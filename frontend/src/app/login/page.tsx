@@ -1,19 +1,114 @@
 "use client"
 
-import { redirect } from "next/navigation"
+import { redirect, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import React from "react"
+import React, { useEffect, useRef, useState } from "react"
+import { motion } from "motion/react"
+
+const enter = {
+  opacity: 1,
+  transition: {
+    duration: 0.3
+  },
+}
+
+const exit = {
+  opacity: 0,
+  transition: {
+    duration: 0.3
+  },
+}
+
+function SignInForm() {
+
+  const [rawUser, setRawUser] = useState('')
+  const [signInFailed, setSignInFailed] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const un_ref = useRef<HTMLInputElement>(null)
+  const pw_ref = useRef<HTMLInputElement>(null)
+
+  const router = useRouter()
+
+  const handleSignIn = () => {
+
+    if (!un_ref.current?.value || !pw_ref.current?.value)
+        return
+
+    fetch('http://localhost:8000/api/auth/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: un_ref.current?.value,
+        password: pw_ref.current?.value,
+        method: 'username'
+      })
+    })
+    .then((data) => {
+      if (!data.ok) {
+        setSignInFailed(true)
+      } else {
+        setSuccess(true)
+      }
+
+      // log in success
+      return data.json()
+    })
+    .then((body) => {
+      console.log(JSON.stringify(body))
+    })
+    .catch((error) => {
+      console.error(error)
+      router.push('/login')
+    })
+  }
+
+  useEffect(() => { if (success) router.push('/browse')}, [success])
+
+  return (
+    <>
+      <div className="text-black text-2xl lg:text-4xl font-semibold lg:pb-3">Welcome back!</div>
+        <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base"
+        placeholder="Username" ref={un_ref}
+        initial={exit}
+        animate={enter}
+        />
+        <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base"
+        placeholder="Password" ref={pw_ref}
+        initial={exit}
+        animate={enter}
+        />
+        {signInFailed && <motion.div className="flex justify-center items-center text-red-500 text-[0.6rem] lg:text-sm"
+        initial={exit}
+        animate={enter}
+        >
+          Incorrect username or password.
+        </motion.div>}
+        <motion.button className="h-8 lg:h-12 bg-purple-400 rounded-lg p-1 font-bold font-white text-sm lg:text-lg
+        hover:scale-105 hover:drop-shadow-sm transition-all" onClick={handleSignIn}
+        initial={exit}
+        animate={enter}
+        >Sign In</motion.button>
+    </>
+  )
+
+}
 
 function OAuthButton({ provider, icon_src }: { provider: string, icon_src: string }) {
 
   return (
-    <button
+    <motion.button
       className="flex flex-row bg-white rounded-lg h-8 lg:h-12 px-4 space-x-3 items-center hover:scale-105 hover:drop-shadow-sm transition-all"
-      onClick={() => {redirect(`http://localhost:8000/api/oauth?provider=${provider}`)}}>
+      onClick={() => {redirect(`http://localhost:8000/api/oauth?provider=${provider}`)}}
+      initial={exit}
+      animate={enter}
+      >
       <Image className="w-5 h-auto lg:w-8" src={icon_src} alt={provider} width={20} height={64}/>
       <div className="text-black text-xs lg:text-base">Continue with {provider.charAt(0).toUpperCase() + provider.slice(1)}</div>
-    </button>
+    </motion.button>
   )
 }
 
@@ -22,19 +117,17 @@ function SignInCard() {
   return (
     <div className="flex flex-col w-3/4 md:w-1/2 lg:w-2/5 xl:w-1/4 h-[29rem] lg:h-[40rem] bg-gradient-to-br from-purple-200 to-[#9EFCFF]
     rounded-lg drop-shadow-lg px-12 lg:px-20 pb-12 pt-8 lg:pt-16 space-y-4">
-      <div className="text-black text-2xl lg:text-4xl font-semibold lg:pb-3">Welcome back!</div>
-      <input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder="Username"/>
-      <input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder="Password"/>
-      <button className="h-8 lg:h-12 bg-purple-400 rounded-lg p-1 font-bold font-white text-sm lg:text-lg
-      hover:scale-105 hover:drop-shadow-sm transition-all">Sign In</button>
+      <SignInForm />
       <div className="flex flex-row space-x-2 justify-center items-center">
-         <hr className="flex-grow border-black"/>
-         <div className="text-black text-sm lg:text-lg font-semibold">or</div>
-         <hr className="flex-grow border-black"/>
+        <hr className="flex-grow border-black"/>
+        <div className="text-black text-sm lg:text-lg font-semibold">or</div>
+        <hr className="flex-grow border-black"/>
       </div>
-      <OAuthButton provider="42" icon_src="/42.svg" />
-      <OAuthButton provider="discord" icon_src="/discord.svg" />
-      <OAuthButton provider="github" icon_src="/github.svg" />
+      <div className="flex flex-col space-y-4">
+        <OAuthButton provider="42" icon_src="/42.svg" />
+        <OAuthButton provider="discord" icon_src="/discord.svg" />
+        <OAuthButton provider="github" icon_src="/github.svg" />
+      </div>
       <div className="flex flex-row text-black text-[0.6rem] lg:text-xs space-x-2 items-center justify-center">
         <Link href="/register" className="text-blue-500 underline cursor-pointer">Register</Link>
         <div>or</div>

@@ -23,7 +23,7 @@ from app_users import views as app_users_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
- 
+
     # Users and auth
 	path('api/users', app_users_views.AppUserList.as_view()),
     path('api/users/picture', app_users_views.AppUserPicture.as_view()),

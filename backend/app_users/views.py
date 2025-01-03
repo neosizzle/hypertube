@@ -14,6 +14,8 @@ from PIL import Image
 from dotenv import load_dotenv
 import yagmail
 
+from logging import info, error
+
 
 load_dotenv()
 
@@ -177,7 +179,7 @@ class AuthLogin(APIView):
 				serializer.save()
 				return serializer.data
 
-			print(serializer.errors)
+			error(serializer.errors)
 			return None
 
 	def post(self, request, format=None):
@@ -201,9 +203,15 @@ class AuthLogin(APIView):
 				raise Http404
 			
 			session = Session.create_session_for_user(user.id)
-			resp = AppUserSerializer(user).data
-			resp.update({"token": session.token})
-			return Response(resp)
+			data = AppUserSerializer(user).data
+			data.update({"token": session.token})
+			
+			response = Response(data)
+			response.set_cookie('token', session.token, httponly=True, samesite='Strict')
+
+			info(" Set-Cookie: ", response.cookies.get('token'))
+
+			return response
 		# handle other oauth methods
 		else:
 			code = body.get('code')
@@ -215,9 +223,13 @@ class AuthLogin(APIView):
 				return Response(data={'detail': 'State does not match'}, status=status.HTTP_400_BAD_REQUEST)
 			user = self.oauth_token_exchange(method, code, redirect_uri)
 			session = Session.create_session_for_user(user.get('id'))
-			resp = user
-			resp.update({"token": session.token})
-			return Response(resp)
+			data = user
+			data.update({"token": session.token})
+			
+			response = Response(data)
+			response.set_cookie('token', session.token, httponly=True, samesite='Strict')
+
+			return response
 
 class AppUserList(APIView):
 	"""
@@ -320,13 +332,11 @@ class OTPRequest(APIView):
 			yag = yagmail.SMTP(user=os.getenv('EMAIL_SENDER'), password=os.getenv("EMAIL_APP_PW"))
 
 			subject = "OTP for hyperhube"
-
-			# Send email
 			try:
 				yag.send(to=email, subject=subject, contents=token)
 				return Response(status=status.HTTP_200_OK)
 			except Exception as e:
-				print(f"yagmail error {e}")
+				error(f"yagmail error {e}")
 				return Response({"detail" : "Send email error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 		except ValueError:
