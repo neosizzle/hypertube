@@ -1,10 +1,9 @@
 "use client"
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, makeUseVisualState } from "motion/react"
+import { motion } from "motion/react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation";
-import { Router } from "next/router";
 
 function Search() {
 
@@ -116,7 +115,8 @@ function Profile() {
   }
 
   const handleLogOut = () => {
-    localStorage.removeItem('token')
+    
+    // ! need to remove token from cookies
     router.push('/login')
   }
   
@@ -142,6 +142,7 @@ function Profile() {
 }
 
 export default function Header() {
+
   return (
     <header className="flex flex-row top-0 sticky text-black justify-between items-center py-3 px-16 bg-gradient-to-r from-purple-200 to-[#9efcff] z-10">
       <div className="flex flex-row items-center justify-center space-x-4">

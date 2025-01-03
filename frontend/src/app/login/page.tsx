@@ -59,7 +59,6 @@ function SignInForm() {
     })
     .then((body) => {
       console.log(JSON.stringify(body))
-      localStorage.setItem('token', body.token)
     })
     .catch((error) => {
       console.error(error)

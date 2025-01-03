@@ -10,6 +10,8 @@ from secrets import token_urlsafe
 from django.shortcuts import redirect
 from dotenv import load_dotenv
 
+from logging import info
+
 
 load_dotenv()
 
@@ -197,9 +199,15 @@ class AuthLogin(APIView):
 				raise Http404
 			
 			session = Session.create_session_for_user(user.id)
-			resp = AppUserSerializer(user).data
-			resp.update({"token": session.token})
-			return Response(resp)
+			data = AppUserSerializer(user).data
+			data.update({"token": session.token})
+			
+			response = Response(data)
+			response.set_cookie('token', session.token, httponly=True, samesite='Strict')
+
+			info(" Set-Cookie: ", response.cookies.get('token'))
+
+			return response
 		# handle other oauth methods
 		else:
 			code = body.get('code')
@@ -211,9 +219,13 @@ class AuthLogin(APIView):
 				return Response(data={'detail': 'State does not match'}, status=status.HTTP_400_BAD_REQUEST)
 			user = self.oauth_token_exchange(method, code, redirect_uri)
 			session = Session.create_session_for_user(user.get('id'))
-			resp = user
-			resp.update({"token": session.token})
-			return Response(resp)
+			data = user
+			data.update({"token": session.token})
+			
+			response = Response(data)
+			response.set_cookie('token', session.token, httponly=True, samesite='Strict')
+
+			return response
 
 class AppUserList(APIView):
 	"""

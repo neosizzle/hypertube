@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react"
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import { useRouter } from "next/navigation";
 
 type SeriesData = {
   no_seasons: number
@@ -155,12 +156,6 @@ let squid_game: ShowInfo = {
 }
 
 export default function Browse() {
-
-  // useEffect(() => {
-
-  //   // if user is not logged in, redirect to /login
-  //   redirect('/login')
-  // }, [])
 
   return (
     <div className="h-screen w-screen bg-white flex flex-col justify-between">
