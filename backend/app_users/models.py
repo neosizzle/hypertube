@@ -2,10 +2,10 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 
-import bcrypt
 from dotenv import load_dotenv
 import os
 import random
+import bcrypt
 
 load_dotenv()
 secret_key = os.getenv('PASSWORD_HASH_KEY')  # Retrieve the key from .env
@@ -72,7 +72,7 @@ class Session(models.Model):
 				# If the session has expired, delete that session
 				existing_session.delete()
 
-		token = bcrypt.gensalt().decode('utf-8') 
+		token = bcrypt.gensalt().decode('utf-8')
 		
 		expires_at = timezone.now() + timedelta(hours=24)
 		session = cls.objects.create(app_user=app_user, token=token, expires_at=expires_at)
