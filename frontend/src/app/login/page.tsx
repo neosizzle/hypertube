@@ -22,13 +22,45 @@ const exit = {
 
 function SignInForm() {
 
-  const [rawUser, setRawUser] = useState('')
   const [signInFailed, setSignInFailed] = useState(false)
   const [success, setSuccess] = useState(false)
   const un_ref = useRef<HTMLInputElement>(null)
   const pw_ref = useRef<HTMLInputElement>(null)
-
   const router = useRouter()
+
+  // callback code exchange
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const code = urlParams.get('code')
+    const state = urlParams.get('state') // split based on my backend specs
+
+    if (!code || !state)
+      return
+
+    const provider = state.split('_')[0]
+    const redirect_uri = `${window.location.protocol}//${window.location.host}${window.location.pathname}`
+
+    fetch(`http://localhost:8000/api/auth/login`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code: code,
+        state: state,
+        redirect_uri: redirect_uri,
+        method: provider
+      })
+    })
+    .then((data) => {
+      !data.ok ? router.push('/login') : setSuccess(true)
+    })
+    .catch((error) => {
+      console.error(error)
+      router.push('/login')
+    })
+  }, [])
 
   const handleSignIn = () => {
 
@@ -138,6 +170,8 @@ function SignInCard() {
 }
 
 export default function Login() {
+
+  // TODO: move success page functionality here, and deprecate /success
 
   return (
     <div className="flex flex-col h-screen w-screen bg-white items-center justify-center space-y-4">
