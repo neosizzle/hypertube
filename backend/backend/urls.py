@@ -20,6 +20,7 @@ from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from app_users import views as app_users_views
+from video import views as video_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,6 +33,10 @@ urlpatterns = [
     path('api/auth/otp',  app_users_views.OTPRequest.as_view()),
     path('api/auth/reset',  app_users_views.PwReset.as_view()),
     path('api/oauth',  app_users_views.OAuthProvider.as_view()),
+
+    # videos
+    path('api/videos', video_views.VideoList.as_view()),
+    path('api/comments', video_views.CommentList.as_view()),
 
 ]
 
