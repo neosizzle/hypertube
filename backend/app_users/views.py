@@ -31,7 +31,7 @@ GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize'
 GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 GITHUB_IDEN_URL = 'https://api.github.com/user'
 
-REDIRECT_URI = 'http://localhost:3000/success'
+REDIRECT_URI = 'http://localhost:3000/login'
 
 class OAuthProvider(APIView):
 	ACCEPTED_PROVIDERS = ['42', 'discord', 'github']
@@ -330,16 +330,21 @@ class OTPRequest(APIView):
 			token = otp_req.token
 			yag = yagmail.SMTP(user=os.getenv('EMAIL_SENDER'), password=os.getenv("EMAIL_APP_PW"))
 
-			subject = "OTP for hyperhube"
+			subject = "hypertube Password Reset OTP"
+			content = "\n".join([
+				"You have requested an OTP to reset the password of the hypertube account associated with this email.",
+				f"<h1>OTP: {token}</h1>",
+				"The OTP will expire in 30 seconds."
+			])
 			try:
-				yag.send(to=email, subject=subject, contents=token)
+				yag.send(to=email, subject=subject, contents=content)
 				return Response(status=status.HTTP_200_OK)
 			except Exception as e:
 				error(f"yagmail error {e}")
 				return Response({"detail" : "Send email error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 		except ValueError:
-			return Response({"detail" : "Email is invalid"}, status=status.HTTP_400_BAD_REQUEST)
+			return Response({"detail" : "Email is not associated with any account"}, status=status.HTTP_400_BAD_REQUEST)
 	
 class PwReset(APIView):
 	def post(self, request, format=None):
