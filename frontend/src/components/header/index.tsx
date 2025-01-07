@@ -116,12 +116,12 @@ function Profile() {
 
   const handleLogOut = () => {
     
-    // ! need to remove token from cookies
+    // TODO: backend endpoint for remove token from cookies
     router.push('/login')
   }
   
   return (
-    <div className="flex items-center">
+    <div className="flex items-center relative">
       <motion.div
       onHoverStart={toggleHover}
       onHoverEnd={toggleHover}
@@ -130,7 +130,7 @@ function Profile() {
         <motion.div
           initial={exit}
           animate={isHover ? enter : exit}
-          className="absolute top-16 right-14 bg-white rounded-lg text-black z-10">
+          className="absolute top-16 right-0 bg-white rounded-lg text-black z-10">
             <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
               <li className="hover:text-gray-500"><Link href="/account">Account</Link></li>
               <li className="hover:text-gray-500"><button onClick={handleLogOut}>Log Out</button></li>

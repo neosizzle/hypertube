@@ -33,6 +33,12 @@ function ResetPasswordCard() {
 
   const handleSendCode = async () => {
 
+    if (!codeButton.current)
+      return
+
+    codeButton.current.innerHTML = `Sent`
+    codeButton.current.className = `h-8 lg:h-12 w-32 bg-purple-200 rounded-lg p-2 font-semibold font-white text-[0.6rem] md:text-xs lg:text-sm xl:text-base`
+
     const data = await fetch('http://localhost:8000/api/auth/otp', {
       method: 'POST',
       credentials: 'include',
@@ -52,14 +58,11 @@ function ResetPasswordCard() {
     // cooldown
     let seconds = timeout
 
-    if (codeButton.current) codeButton.current.disabled = true
+    codeButton.current.disabled = true
 
     const id = setInterval(() => {
       seconds--
-      if (codeButton.current) {
-        codeButton.current.innerHTML = `${seconds}s`
-        codeButton.current.className = `h-8 lg:h-12 w-32 bg-purple-400 rounded-lg p-2 font-semibold font-white text-[0.6rem] md:text-xs lg:text-sm xl:text-base`
-      }
+      if (codeButton.current) codeButton.current.innerHTML = `Sent | ${seconds}s`
     }, 1000)
 
     setTimeout(() => {
