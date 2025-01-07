@@ -33,16 +33,14 @@ class AuthMiddleware:
 
 	# Validate token and user here
 	def __call__(self, request):
-		token_header = request.headers.get('Authorization')
-		if token_header is None:
+
+		token = request.COOKIES.get('token')
+		if token is None:
 			response = self.get_response(request)
 			return response
-		if not token_header.startswith("Bearer ") or len(token_header.split()) < 2:
-			return HttpResponseForbidden("Token invalid")
-	
+
 		try:
-			user_token = token_header.split()[1]
-			session = Session.objects.get(token=user_token)
+			session = Session.objects.get(token=token)
 			if session.expires_at > timezone.now():
 				return HttpResponseForbidden("Token invalid")
 			request.app_user = session.app_user

@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/users/picture', app_users_views.AppUserPicture.as_view()),
     path('api/users/me', app_users_views.AppUserDetail.as_view()),
     path('api/auth/login', app_users_views.AuthLogin.as_view()),
+    path('api/auth/logout', app_users_views.AuthLogout.as_view()),
     path('api/auth/otp',  app_users_views.OTPRequest.as_view()),
     path('api/auth/reset',  app_users_views.PwReset.as_view()),
     path('api/oauth',  app_users_views.OAuthProvider.as_view()),

@@ -230,6 +230,24 @@ class AuthLogin(APIView):
 
 			return response
 
+class AuthLogout(APIView):
+    """
+    Log out a user.
+    """
+    def post(self, request, format=None):
+        
+        token = request.COOKIES.get('token')
+        
+        info(token)
+        
+        if not token:
+            return Response({"detail": "No token found"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        response = Response({'detail': 'Logged out successfully'}, status=status.HTTP_200_OK)
+        response.delete_cookie('token')
+        
+        return response
+
 class AppUserList(APIView):
 	"""
 	List all app_users, or create a new app_user.
