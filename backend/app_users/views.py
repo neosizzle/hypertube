@@ -16,7 +16,6 @@ import yagmail
 
 from logging import info, error
 
-
 load_dotenv()
 
 from app_users.models import AppUser, Session, PwResetAttempt
