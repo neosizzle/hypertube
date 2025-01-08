@@ -3,7 +3,6 @@
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 import { motion } from "motion/react";
-import { data } from "motion/react-client";
 import Image from "next/image"
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -33,6 +32,7 @@ export default function Account() {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [isEdit, setEdit] = useState(false)
+  const [updateSuccess, setUpdateSuccess] = useState(false)
   const router = useRouter()
 
   const [profilePicURL, setProfilePicURL] = useState('')
@@ -100,6 +100,44 @@ export default function Account() {
     })
   }
 
+  const updateProfile = () => {
+
+    const requestBody: { username?: string, email?: string, first_name?: string, last_name?: string } = {};
+    if (username) requestBody.username = username;
+    if (email) requestBody.email = email;
+    if (firstName) requestBody.first_name = firstName
+    if (lastName) requestBody.last_name = lastName;
+
+    fetch('http://localhost:8000/api/users/me', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    }).then((response) => {
+      if (response.ok) {
+        setUpdateSuccess(true)
+        setTimeout(() => setUpdateSuccess(false), 5000)
+      }
+    }).catch((error) => {
+      console.error(error);
+    })
+  }
+
+  const deleteAccount = () => {
+    fetch('http://localhost:8000/api/users/me', {
+      method: 'DELETE',
+      credentials: 'include',
+    }).then((response) => {
+      if (response.ok) {
+        router.push('/browse')
+      }
+    }).catch((error) => {
+      console.error(error);
+    })
+  }
+
   return (
     <div className="h-screen w-screen bg-white flex flex-col justify-between">
       <Header />
@@ -112,22 +150,31 @@ export default function Account() {
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-1">
                 <div className="text-black font-bold">Username</div>
-                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base border border-slate-400" defaultValue={username}/>
+                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2 
+                text-black text-xs lg:text-base border border-slate-400"
+                defaultValue={username} onInput={(e) => setUsername(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
                 <div className="text-black font-bold">Email</div>
-                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base border border-slate-400" defaultValue={email}/>
+                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2
+                text-black text-xs lg:text-base border border-slate-400"
+                defaultValue={email} onInput={(e) => setEmail(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
                 <div className="text-black font-bold">First Name</div>
-                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base border border-slate-400" defaultValue={firstName}/>
+                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2
+                text-black text-xs lg:text-base border border-slate-400"
+                defaultValue={firstName} onInput={(e) => setFirstName(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
                 <div className="text-black font-bold">Last Name</div>
-                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base border border-slate-400" defaultValue={lastName}/>
+                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2
+                text-black text-xs lg:text-base border border-slate-400"
+                defaultValue={lastName} onInput={(e) => setLastName(e.currentTarget.value)}/>
               </div>
-              <button className="w-48 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
-              hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {router.push('/reset')}}>Update Profile</button>
+              <button className={`w-48 h-8 lg:h-10 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
+              hover:scale-105 hover:drop-shadow-sm transition-all ${updateSuccess ?'bg-green-400 text-black' : 'bg-purple-400'}`}
+              onClick={updateProfile}>{updateSuccess ? 'Success!' : 'Update Profile'}</button>
             </div>
             <div className="flex flex-col items-center relative space-y-5">
               <div className="text-black font-bold justify-start">Profile Picture</div>
@@ -155,7 +202,7 @@ export default function Account() {
         <div className="flex flex-col space-y-4">
           <div className="text-black text-xl font-medium">Account Settings</div>
           <button className="w-48 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
-                  hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {router.push('/reset')}}>Delete Account</button>
+                  hover:scale-105 hover:drop-shadow-sm hover:bg-red-500 transition-all" onClick={() => {deleteAccount}}>Delete Account</button>
         </div>
       </div>
       <Footer />

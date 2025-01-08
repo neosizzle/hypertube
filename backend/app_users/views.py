@@ -287,24 +287,20 @@ class AppUserDetail(APIView):
 
 	def patch(self, request, format=None):
 		app_user = request.app_user
-		serializer = AppUserSerializer(app_user, data=request.data)
+		serializer = AppUserSerializer(app_user, data=request.data, partial=True)
 		if serializer.is_valid():
 			serializer.save()
 			return Response(serializer.data)
+
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 	def delete(self, request, format=None):
 		app_user = request.app_user
 
-		# delete profile pics
-		directory = 'profile_pics/'
-		file_names = default_storage.listdir(directory)[1]  # List only the files (not directories)
-
-		for file_name in file_names:
-			if file_name.endswith('.png') and file_name.startswith(f"{app_user.id}"):
-				file_path = os.path.join(directory, file_name)
-				if default_storage.exists(file_path):
-					default_storage.delete(file_path)
+		old_path = app_user.profile_picture.path
+		old_name = app_user.profile_picture.name.split('/')[-1]
+		if old_path and old_name != 'default.png' and default_storage.exists(old_path):
+			default_storage.delete(old_path)
 
 		app_user.delete()
 		return Response(status=status.HTTP_204_NO_CONTENT)
