@@ -327,11 +327,37 @@ class AppUserPicture(APIView):
 		except (IOError, SyntaxError):
 			return Response({"detail": "Invalid image file."}, status=status.HTTP_400_BAD_REQUEST)
 
-		file_path = default_storage.save(f'profile_pics/{user.id}_{file.name}', ContentFile(file.read()))
+		# delete old profile picture
+		old_path = user.profile_picture.path
+		old_name = user.profile_picture.name.split('/')[-1]
+		if old_path and old_name != 'default.png' and default_storage.exists(old_path):
+			default_storage.delete(old_path)
+
+		file_path = f'profile_pics/{user.id}_{file.name}'
+
+		with default_storage.open(file_path, 'wb+') as dest:
+			for chunk in file.chunks():
+				dest.write(chunk)
+
 		file_url = default_storage.url(file_path)
 	
 		user.profile_picture = file_path
 		user.save()
+		return Response({"detail" : file_url}, status=status.HTTP_200_OK)
+
+	def delete(self, request, format=None):
+		
+		user = request.app_user
+		old_path = user.profile_picture.path
+		if old_path and default_storage.exists(old_path):
+			default_storage.delete(old_path)
+
+		file_path = 'profile_pics/default.png'
+
+		file_url = default_storage.url(file_path)
+		user.profile_picture = file_path
+		user.save()
+
 		return Response({"detail" : file_url}, status=status.HTTP_200_OK)
 
 class OTPRequest(APIView):

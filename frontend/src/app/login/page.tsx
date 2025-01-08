@@ -162,7 +162,13 @@ export default function Login() {
       })
     })
     .then((data) => {
-      if (data.ok) setSuccess(true)
+      if (data.ok) {
+        setSuccess(true)
+        data.json().then((json) => {
+          console.log(JSON.stringify(json))
+          localStorage.setItem('userID', json.id)
+        })
+      }
     })
     .catch((error) => {
       console.error(error)

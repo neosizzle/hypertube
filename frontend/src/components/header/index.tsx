@@ -1,4 +1,5 @@
 "use client"
+
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react"
 import Link from "next/link"
@@ -89,7 +90,7 @@ function Search() {
   )
 }
 
-function Profile() {
+function Profile({ profilePicURL } : {profilePicURL : string}) {
 
   const [isHover, setIsHover] = useState(false)
   const toggleHover = () => {setIsHover(!isHover)}
@@ -115,18 +116,24 @@ function Profile() {
   }
 
   const handleLogOut = () => {
-    
-    // TODO: backend endpoint for remove token from cookies
-    router.push('/login')
+    fetch('http://localhost:8000/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    }).then((data) => {
+      if (data.ok) router.push('/login');
+    }).catch((error) => {
+      console.error(error)
+    })
   }
-  
+
   return (
     <div className="flex items-center relative">
       <motion.div
       onHoverStart={toggleHover}
       onHoverEnd={toggleHover}
       >
-        <Image src="/discord.svg" alt="user" width={25} height={25}/>
+        <Image src={`http://localhost:8000${profilePicURL}`} alt="user" width={25} height={25}
+        className="rounded-full w-6 h-6"/>
         <motion.div
           initial={exit}
           animate={isHover ? enter : exit}
@@ -143,6 +150,19 @@ function Profile() {
 
 export default function Header() {
 
+  const [profilePicURL, setProfilePicURL] = useState('/media/profile_pics/default.png')
+
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/users/me`, {
+      method: 'GET',
+      credentials: 'include',
+    }).then((data) => {
+      if (data.ok) {
+        data.json().then((json) => { if (json.profile_picture) setProfilePicURL(json.profile_picture) })
+      }
+    })
+  }, [])
+
   return (
     <header className="flex flex-row top-0 sticky text-black justify-between items-center py-3 px-16 bg-gradient-to-r from-purple-200 to-[#9efcff] z-10">
       <div className="flex flex-row items-center justify-center space-x-4">
@@ -151,7 +171,7 @@ export default function Header() {
       </div>
       <div className="flex flex-row items-center justify-center space-x-4">
         <Search />
-        <Profile />
+        <Profile profilePicURL={profilePicURL} />
       </div>
     </header>
   )
