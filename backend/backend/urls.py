@@ -29,6 +29,7 @@ urlpatterns = [
 	path('api/users', app_users_views.AppUserList.as_view()),
     path('api/users/picture', app_users_views.AppUserPicture.as_view()),
     path('api/users/me', app_users_views.AppUserDetail.as_view()),
+    path('api/users/id/<int:pk>', app_users_views.AppUserOthersDetail.as_view()),
     path('api/auth/login', app_users_views.AuthLogin.as_view()),
     path('api/auth/logout', app_users_views.AuthLogout.as_view()),
     path('api/auth/otp',  app_users_views.OTPRequest.as_view()),
@@ -37,6 +38,7 @@ urlpatterns = [
 
     # videos
     path('api/videos', video_views.VideoList.as_view()),
+    path('api/videos/<int:pk>', video_views.VideoList.as_view()),
     path('api/comments', video_views.CommentList.as_view()),
 
 ]

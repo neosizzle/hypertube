@@ -21,6 +21,8 @@ class VideoSerializer(serializers.Serializer):
 	
 
 	def create(self, validated_data):
+		# NOTE: NOT NULL constraint failed: video_video.torrent_id
+		# will occur since we havent found a way to bind a video to a torrent properly
 		return Video.objects.create(**validated_data)
 
 	def update(self, instance, validated_data):

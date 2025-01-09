@@ -253,7 +253,9 @@ class AppUserList(APIView):
 	List all app_users, or create a new app_user.
 	"""
 	def get(self, request, format=None):
-		app_users = AppUser.objects.all()
+		username = request.query_params.get('username', "")
+
+		app_users = AppUser.objects.all(username__startswith=username).order_by('username')
 		serializer = AppUserSerializer(app_users, many=True)
 		return Response(serializer.data)
 
@@ -280,7 +282,7 @@ class AppUserDetail(APIView):
 		except AppUser.DoesNotExist:
 			raise Http404
 
-	def get(self, request, format=None):
+	def get(self, request, format=None):		
 		app_user = request.app_user
 		serializer = AppUserSerializer(app_user)
 		return Response(serializer.data)
@@ -308,6 +310,18 @@ class AppUserDetail(APIView):
 		response.delete_cookie('token')
 
 		return response
+
+class AppUserOthersDetail(APIView):
+	def get(self, request, pk, format=None):
+		try:
+			app_user = AppUser.objects.get(pk=pk)
+			serializer = AppUserSerializer(app_user)
+			return Response(serializer.data)
+		except AppUser.DoesNotExist:
+			return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+		except Exception as e:
+			error(e)
+			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AppUserPicture(APIView):
 	def post(self, request, format=None):
