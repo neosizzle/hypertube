@@ -26,6 +26,10 @@ const exit = {
   }
 }
 
+function formatJSONKey(key : string) {
+  return key.split('_').map((s : string) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
+}
+
 function DeleteAccountConfirmationModal({ open, onClose }: { open: boolean, onClose: () => void }) {
 
   const [username, setUsername] = useState('')
@@ -104,8 +108,9 @@ export default function Account() {
   const [profilePicURL, setProfilePicURL] = useState('')
 
   const [isEdit, setEdit] = useState(false)
-  const [updateSuccess, setUpdateSuccess] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [updateSuccess, setUpdateSuccess] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -189,7 +194,14 @@ export default function Account() {
     }).then((response) => {
       if (response.ok) {
         setUpdateSuccess(true)
+        setErrorMsg('')
         setTimeout(() => setUpdateSuccess(false), 5000)
+      } else {
+        response.json().then((obj) => {
+          const key = Object.keys(obj)[0]
+          const msg = (obj[key][0].includes('unique') ? formatJSONKey(key) + ' is already taken.' : obj[key][0])
+          setErrorMsg(formatJSONKey(key) + ": " + msg)
+        })
       }
     }).catch((error) => {
       console.error(error);
@@ -230,6 +242,11 @@ export default function Account() {
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={lastName} onInput={(e) => setLastName(e.currentTarget.value)}/>
               </div>
+              {errorMsg !== '' && <motion.div className="flex justify-center items-center text-red-500 text-[0.6rem] lg:text-sm"
+                initial={exit}
+                animate={enter}>
+                  {errorMsg}
+              </motion.div>}
               <button className={`w-48 h-8 lg:h-10 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
               hover:scale-105 hover:drop-shadow-sm transition-all ${updateSuccess ?'bg-green-400 text-black' : 'bg-purple-400'}`}
               onClick={updateProfile}>{updateSuccess ? 'Success!' : 'Update Profile'}</button>
