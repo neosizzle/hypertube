@@ -83,14 +83,14 @@ function Search() {
       animate={isSearching ? searchBarEnter : searchBarExit}
       transition={{ duration: 0.3, ease: "anticipate"}}
       className="flex w-64 h-10 rounded-md border-2 border-black p-2 space-x-2">
-        <Image src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6"/>
+        <Image priority src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6"/>
         <input placeholder="Search" className="outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"></input>
       </motion.div>
     </div>
   )
 }
 
-function Profile({ profilePicURL } : {profilePicURL : string}) {
+function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profilePicURL : string}) {
 
   const [isHover, setIsHover] = useState(false)
   const toggleHover = () => {setIsHover(!isHover)}
@@ -138,10 +138,12 @@ function Profile({ profilePicURL } : {profilePicURL : string}) {
           initial={exit}
           animate={isHover ? enter : exit}
           className="absolute top-16 right-0 bg-white rounded-lg text-black z-10">
-            <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
+            {isLoggedIn ? <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
               <li className="hover:text-gray-500"><Link href="/account">Account</Link></li>
               <li className="hover:text-gray-500"><button onClick={handleLogOut}>Log Out</button></li>
-            </ul>
+            </ul> : <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
+              <li className="hover:text-gray-500"><Link href="/login">Log In</Link></li>
+            </ul>}
         </motion.div>
       </motion.div>
     </div>
@@ -151,6 +153,7 @@ function Profile({ profilePicURL } : {profilePicURL : string}) {
 export default function Header() {
 
   const [profilePicURL, setProfilePicURL] = useState('/media/profile_pics/default.png')
+  const [login, setLogin] = useState(true)
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/users/me`, {
@@ -159,7 +162,7 @@ export default function Header() {
     }).then((data) => {
       if (data.ok) {
         data.json().then((json) => { if (json.profile_picture) setProfilePicURL(json.profile_picture) })
-      }
+      } else setLogin(false)
     })
   }, [])
 
@@ -171,7 +174,7 @@ export default function Header() {
       </div>
       <div className="flex flex-row items-center justify-center space-x-4">
         <Search />
-        <Profile profilePicURL={profilePicURL} />
+        <Profile isLoggedIn={login} profilePicURL={profilePicURL} />
       </div>
     </header>
   )
