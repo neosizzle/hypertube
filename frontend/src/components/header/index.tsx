@@ -132,7 +132,7 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
       onHoverStart={toggleHover}
       onHoverEnd={toggleHover}
       >
-        <Image src={`http://localhost:8000${profilePicURL}`} alt="user" width={25} height={25}
+        <Image src={profilePicURL} alt="user" width={25} height={25}
         className="rounded-full w-6 h-6"/>
         <motion.div
           initial={exit}
@@ -152,7 +152,7 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
 
 export default function Header() {
 
-  const [profilePicURL, setProfilePicURL] = useState('/media/profile_pics/default.png')
+  const [profilePicURL, setProfilePicURL] = useState('http://localhost:8000/media/profile_pics/default.png')
   const [login, setLogin] = useState(true)
 
   useEffect(() => {
@@ -161,13 +161,13 @@ export default function Header() {
       credentials: 'include',
     }).then((data) => {
       if (data.ok) {
-        data.json().then((json) => { if (json.profile_picture) setProfilePicURL(json.profile_picture) })
+        data.json().then((json) => { if (json.profile_picture) setProfilePicURL(`http://localhost:8000` + json.profile_picture) })
       } else setLogin(false)
     })
   }, [])
 
   return (
-    <header className="flex flex-row top-0 sticky text-black justify-between items-center py-3 px-16 bg-gradient-to-r from-purple-200 to-[#9efcff] z-10">
+    <header className="flex flex-row top-0 text-black justify-between items-center py-3 px-16 bg-gradient-to-r from-purple-200 to-[#9efcff] z-10">
       <div className="flex flex-row items-center justify-center space-x-4">
         <div className="bg-clip-text inline-block font-bold text-purple-400 text-base lg:text-2xl">hypertube</div>
         <Link className="font-bold" href={"/browse"}>Home</Link>

@@ -6,7 +6,7 @@ import Modal from '@/components/modal';
 import { motion } from "motion/react";
 import Image from "next/image"
 import { useRouter } from "next/navigation";
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const enter = {
   opacity: 1,
