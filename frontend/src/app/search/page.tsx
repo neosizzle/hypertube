@@ -55,9 +55,9 @@ export default function Search() {
   return (
     <div className="h-auto w-full overflow-x-hidden bg-white flex flex-col justify-between">
       <Header />
-      <div className="h-screen flex flex-col justify-center py-10 px-16 mb-auto space-y-8">
-        <div className="text-black text-4xl font-medium pt-32 pb-8">Search results for: "{searchQuery}"</div>
-        <div className="space-y-24">
+      <div className="h-auto flex flex-col justify-center py-10 px-16 mb-auto space-y-8 overflow-y-hidden">
+        <div className="text-black text-4xl font-medium pt-12">Search results for: "{searchQuery}"</div>
+        <div className="space-y-24 py-12">
           <ResultRow />
           <ResultRow />
           <ResultRow />

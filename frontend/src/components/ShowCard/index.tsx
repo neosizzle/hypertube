@@ -85,7 +85,6 @@ function CardInfoExtension({ info } : { info: ShowInfo }) {
               <div className="font-medium text-xs text-black">{mal.toPrecision(2)}</div>
             </div>}
           </div>
-
         </div>
       </motion.div>
     </AnimatePresence>
@@ -106,7 +105,7 @@ export default function ShowCard({ info } : { info: ShowInfo }) {
         left: '50%',
         translateX: '-50%',
         translateY: '-50%',
-        width: '100%'
+        width: '100%',
       }}
       whileHover={{scale : 1.3, zIndex: "1", transition: {duration: 0.5, ease: "backOut"}}}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
