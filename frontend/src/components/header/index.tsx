@@ -16,6 +16,7 @@ function Search() {
   
   const ref = useRef<HTMLImageElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const inputDivRef = useRef<HTMLDivElement>(null)
   
   const [isSearching, setIsSearching] = useState(false)
 
@@ -81,20 +82,25 @@ function Search() {
   }, [isSearching])
 
   return (
-    <div className="flex flex-row w-64 h-10 justify-end items-center overflow-hidden" ref={ref}>
+    <div className="flex flex-row w-68 h-10 justify-end items-center overflow-hidden" ref={ref}>
       <motion.div
       initial={ isOpen ? searchIconExit : searchIconEnter }
       animate={ isOpen ? searchIconEnter : searchIconExit }>
         <Image src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6" onClick={() => setIsOpen(true)}/>
       </motion.div>
       <motion.div
+      ref={inputDivRef}
       initial={ isOpen ? searchBarEnter : searchBarExit }
       animate={ isOpen ? searchBarEnter : searchBarExit }
-      onAnimationComplete={() => { if (isOpen && inputRef.current) inputRef.current.focus()}}
-      className="flex w-64 h-10 rounded-md border-2 border-black p-2 space-x-2">
+      onAnimationComplete={() => {
+        if (isOpen && inputRef.current) inputRef.current.focus()
+        else if (!isOpen && inputDivRef.current) inputDivRef.current.style.display = 'none'
+        }}
+      className="flex w-full h-10 rounded-md border-2 border-black p-2 space-x-2 justify-center items-center">
         <Image priority src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6"/>
         <input placeholder="Search" className="outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
         onInput={(e) => setSearchQuery((e.target as HTMLInputElement).value)} value={searchQuery} ref={inputRef}/>
+        <Image priority src="/close.svg" alt="search" width={25} height={25} className="w-6 h-6" onClick={() => setSearchQuery('')}/>
       </motion.div>
     </div>
   )
