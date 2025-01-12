@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { SearchProvider } from "@/providers/SearchProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,12 +20,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  // provider must be root level to preserve state between pages
   return (
     <html lang="en">
       <body
         className={`${inter.variable} antialiased`}
       >
-        {children}
+        <SearchProvider>
+          {children}
+        </SearchProvider>
       </body>
     </html>
   );
