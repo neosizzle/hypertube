@@ -78,7 +78,11 @@ function Search() {
 
   // redirect to /search if start searching
   useEffect(() => {
-    (isSearching) ? router.push('/search') : router.push('/browse')
+    if (isSearching) {
+      router.push('/search')
+    } else if (isOpen) {
+      router.push('/browse')
+    }
   }, [isSearching])
 
   return (
