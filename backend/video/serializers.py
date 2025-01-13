@@ -1,4 +1,4 @@
-import bcrypt
+import json
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -43,11 +43,26 @@ class VideoSerializer(serializers.Serializer):
 		return instance
 
 
+
 class CommentSerializer(serializers.Serializer):
 	created = serializers.DateTimeField(read_only=True)
 	content = serializers.CharField(max_length=1024, required=False, default="")
 	video = serializers.PrimaryKeyRelatedField(queryset=Video.objects.all())
 	user = serializers.PrimaryKeyRelatedField(queryset=AppUser.objects.all())	
+
+	# custom to_rep here to expand user info to frontend
+	def to_representation(self, instance):
+		representation = super().to_representation(instance)
+		user = AppUser.objects.get(pk=representation['user'])
+		user_obj = {
+			'id': user.id,
+			'username': user.username,
+			'profile_picture': str(user.profile_picture)
+		}
+
+		representation['user'] = user_obj
+		
+		return representation
 
 	def create(self, validated_data):
 		return Comment.objects.create(**validated_data)
