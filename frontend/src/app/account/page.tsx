@@ -2,6 +2,7 @@
 
 import Footer from "@/components/footer";
 import Header from "@/components/header";
+import Modal from '@/components/modal';
 import { motion } from "motion/react";
 import Image from "next/image"
 import { useRouter } from "next/navigation";
@@ -25,17 +26,92 @@ const exit = {
   }
 }
 
-export default function Account() {
+function formatJSONKey(key : string) {
+  return key.split('_').map((s : string) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
+}
 
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
+function DeleteAccountConfirmationModal({ open, onClose }: { open: boolean, onClose: () => void }) {
+
   const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
-  const [isEdit, setEdit] = useState(false)
-  const [updateSuccess, setUpdateSuccess] = useState(false)
+  const [declaration, setDeclaration] = useState('')
+  const [confirmUsername, setConfirmUsername] = useState('')
+  const [enableDelete, setEnableDelete] = useState(false)
   const router = useRouter()
 
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/users/me`, {
+      method: 'GET',
+      credentials: 'include',
+    }).then((data) => {
+      if (data.ok) data.json().then((json) => setUsername(json.username))
+    })
+  }, [])
+
+  useEffect(() => {
+    (username === confirmUsername && declaration === 'delete my account') ? setEnableDelete(true) : setEnableDelete(false)
+  }, [confirmUsername, declaration])
+
+  const deleteAccount = () => {
+
+    fetch('http://localhost:8000/api/users/me', {
+      method: 'DELETE',
+      credentials: 'include',
+    }).then((response) => {
+      if (response.ok) {
+        router.push('/browse')
+      }
+    }).catch((error) => {
+      console.error(error);
+    })
+  }
+
+  return (
+    <Modal open={open}>
+      <div className="flex h-full justify-center items-center">
+        <div className="flex flex-col w-96 h-auto bg-white rounded-lg p-8 space-y-4">
+          <div className="text-black font-bold text-2xl">Are you sure?</div>
+          <div className="text-black text-lg">This account will be permanently deleted and all data will be erased immediately.</div>
+          <div className="text-black text-lg">To confirm this action, please type the following:</div>
+          <div className="space-y-1">
+            <div className="text-black font-bold">Username:</div>
+            <input className="w-full h-8 lg:h-12 bg-white rounded-lg p-2 
+            text-black text-xs lg:text-base border border-slate-400"
+            onInput={(e) => setConfirmUsername(e.currentTarget.value)}
+            onPaste={(e) => e.preventDefault()}/>
+          </div>
+          <div className="space-y-1">
+            <div className="text-black font-bold">To verify, type 'delete my account' below:</div>
+            <input className="w-full h-8 lg:h-12 bg-white rounded-lg p-2 
+            text-black text-xs lg:text-base border border-slate-400"
+            onInput={(e) => setDeclaration(e.currentTarget.value)}
+            onPaste={(e) => e.preventDefault()}/>
+          </div>
+          <div className="flex flex-row space-x-4 justify-center items-center">
+            <button className="w-24 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
+              hover:scale-105 hover:drop-shadow-sm transition-all" onClick={onClose}>Cancel</button>
+            <button className={`w-24 h-8 lg:h-10 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
+              transition-all ${enableDelete ?'bg-red-500 hover:scale-105 hover:drop-shadow-sm' : 'bg-[#FFC0CB]'}`}
+              disabled={!enableDelete} onClick={deleteAccount}>Confirm</button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+export default function Account() {
+
+  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [firstName, setFirstName] = useState('')
   const [profilePicURL, setProfilePicURL] = useState('')
+
+  const [isEdit, setEdit] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const [updateSuccess, setUpdateSuccess] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const router = useRouter()
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/users/me`, {
@@ -118,20 +194,14 @@ export default function Account() {
     }).then((response) => {
       if (response.ok) {
         setUpdateSuccess(true)
+        setErrorMsg('')
         setTimeout(() => setUpdateSuccess(false), 5000)
-      }
-    }).catch((error) => {
-      console.error(error);
-    })
-  }
-
-  const deleteAccount = () => {
-    fetch('http://localhost:8000/api/users/me', {
-      method: 'DELETE',
-      credentials: 'include',
-    }).then((response) => {
-      if (response.ok) {
-        router.push('/browse')
+      } else {
+        response.json().then((obj) => {
+          const key = Object.keys(obj)[0]
+          const msg = (obj[key][0].includes('unique') ? formatJSONKey(key) + ' is already taken.' : obj[key][0])
+          setErrorMsg(formatJSONKey(key) + ": " + msg)
+        })
       }
     }).catch((error) => {
       console.error(error);
@@ -172,6 +242,11 @@ export default function Account() {
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={lastName} onInput={(e) => setLastName(e.currentTarget.value)}/>
               </div>
+              {errorMsg !== '' && <motion.div className="flex justify-center items-center text-red-500 text-[0.6rem] lg:text-sm"
+                initial={exit}
+                animate={enter}>
+                  {errorMsg}
+              </motion.div>}
               <button className={`w-48 h-8 lg:h-10 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
               hover:scale-105 hover:drop-shadow-sm transition-all ${updateSuccess ?'bg-green-400 text-black' : 'bg-purple-400'}`}
               onClick={updateProfile}>{updateSuccess ? 'Success!' : 'Update Profile'}</button>
@@ -195,16 +270,18 @@ export default function Account() {
           </div>
         </div>
         <div className="flex flex-col space-y-4">
+          {/* TODO: change button based on auth method*/}
           <div className="text-black text-xl font-medium">Password and Authentication</div>
           <button className="w-48 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
                   hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {router.push('/reset')}}>Reset Password</button>
         </div>
         <div className="flex flex-col space-y-4">
           <div className="text-black text-xl font-medium">Account Settings</div>
-          <button className="w-48 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
-                  hover:scale-105 hover:drop-shadow-sm hover:bg-red-500 transition-all" onClick={() => {deleteAccount}}>Delete Account</button>
+          <button className="w-48 h-8 lg:h-10 bg-red-500 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
+                  hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {setIsOpen(true)}}>Delete Account</button>
         </div>
       </div>
+      <DeleteAccountConfirmationModal open={isOpen} onClose={() => setIsOpen(false)} />
       <Footer />
     </div>
   )

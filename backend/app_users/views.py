@@ -305,7 +305,11 @@ class AppUserDetail(APIView):
 			default_storage.delete(old_path)
 
 		app_user.delete()
-		return Response(status=status.HTTP_204_NO_CONTENT)
+
+		response = Response(status=status.HTTP_204_NO_CONTENT)
+		response.delete_cookie('token')
+
+		return response
 
 class AppUserOthersDetail(APIView):
 	def get(self, request, pk, format=None):
