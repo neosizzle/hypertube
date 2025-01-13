@@ -138,4 +138,3 @@ class PwResetAttempt(models.Model):
 		else:
 			return None
 
-	

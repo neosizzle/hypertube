@@ -18,6 +18,7 @@ class VideoSerializer(serializers.Serializer):
 	producer = serializers.CharField(max_length=100, required=False, default="")
 	subtitles = serializers.FileField(read_only=True, required=False, allow_null=True, default='thumbnail/subtitles.png')
 	thumbnail = serializers.ImageField(read_only=True, required=False, allow_null=True, default='thumbnail/default.png')
+	watched_by = serializers.PrimaryKeyRelatedField(queryset=AppUser.objects.all(), many=True, required=False)	
 	
 
 	def create(self, validated_data):
@@ -36,6 +37,7 @@ class VideoSerializer(serializers.Serializer):
 		instance.producer = validated_data.get('producer', instance.producer)
 		instance.subtitles = validated_data.get('subtitles', instance.subtitles)
 		instance.thumbnail = validated_data.get('thumbnail', instance.thumbnail)
+		instance.watched_by = validated_data.get('watched_by', instance.watched_by)
 
 		instance.save()
 		return instance

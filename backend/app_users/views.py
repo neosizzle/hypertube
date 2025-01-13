@@ -255,7 +255,7 @@ class AppUserList(APIView):
 	def get(self, request, format=None):
 		username = request.query_params.get('username', "")
 
-		app_users = AppUser.objects.all(username__startswith=username).order_by('username')
+		app_users = AppUser.objects.filter(username__startswith=username).order_by('username')
 		serializer = AppUserSerializer(app_users, many=True)
 		return Response(serializer.data)
 

@@ -17,6 +17,7 @@ class Video(models.Model):
 	producer = models.CharField(max_length=100, default="")
 	subtitle = models.FileField(upload_to='subtitles/', null=True, blank=True, default='subtitles/default.png')
 	thumbnail = models.ImageField(upload_to='thumbnail/', null=True, blank=True, default='thumbnail/default.png')
+	watched_by = models.ManyToManyField(AppUser, blank=True, related_name='watched_videos') # why is this not in users model? to prevent circular import since user model imports this model
 
 class Comment(models.Model):
 	created = models.DateTimeField(auto_now_add=True)

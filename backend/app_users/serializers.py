@@ -4,6 +4,7 @@ from rest_framework.validators import UniqueValidator
 
 
 from .models import AppUser
+from video.serializers import VideoSerializer
 
 class AppUserSerializer(serializers.Serializer):
 	id = serializers.IntegerField(read_only=True)
@@ -16,6 +17,7 @@ class AppUserSerializer(serializers.Serializer):
 	discord_iden = serializers.CharField(required=False, max_length=100)
 	github_iden = serializers.CharField(required=False, max_length=100)
 	profile_picture = serializers.ImageField(required=False, allow_null=True, default='profile_pics/default.png')
+	watched_videos = VideoSerializer(many=True, read_only=True)
 
 	def to_representation(self, instance):
 		representation = super().to_representation(instance)
@@ -40,6 +42,7 @@ class AppUserSerializer(serializers.Serializer):
 		instance.last_name = validated_data.get('last_name', instance.last_name)
 		instance.email = validated_data.get('email', instance.email)
 		instance.password = validated_data.get('password', instance.password)
+		instance.watched_videos = validated_data.get('watched_videos', instance.watched_videos)
 
 		instance.save()
 		return instance
