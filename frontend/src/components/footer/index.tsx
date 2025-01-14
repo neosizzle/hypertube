@@ -2,8 +2,9 @@
 
 export default function Footer() {
   return (
-    <footer className="flex flex-row inset-x-0 bottom-0 text-black items-center py-3 px-16">
-      Footer
+    <footer className="flex flex-col inset-x-0 bottom-0 text-black py-3 pb-5 px-16">
+      <hr className="w-full h-1 bg-gradient-to-r from-purple-200 to-[#9EFCFF] bg-clip-border my-4 rounded-md" />
+      <div className="flex flex-row justify-start">2024 hypertube</div>
     </footer>
   )
 }

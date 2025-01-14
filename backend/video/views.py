@@ -94,3 +94,73 @@ class CommentList(APIView):
 			serializer.save()
 			return Response(serializer.data, status=status.HTTP_201_CREATED)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SearchExternalSource(APIView):
+    
+    OMBD_API_ENDPOINT = f'http://www.omdbapi.com/'
+    DEFAULT_CHUNK_SIZE = 6
+    
+    def get(self, request, format=None):
+        
+        query = request.query_params.get('query')
+        chunk_size = request.query_params.get('chunk_size')
+        
+        if not chunk_size:
+            chunk_size = self.DEFAULT_CHUNK_SIZE
+        
+        if not query:
+            return Response({"detail": "query must not be empty"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        params = {
+            'apikey': os.getenv('OMDB_KEY'),
+            's': query
+        }
+        
+        url = f'{self.OMBD_API_ENDPOINT}?{urlencode(params)}'
+        response = requests.get(url)
+        
+        if response.status_code != 200:
+            return Response({"detail": "external endpoint died"}, status=status.HTTP_404_NOT_FOUND)
+        
+        data = response.json()
+        
+        if ('Error' in data.keys()):
+            return Response({"detail": data['Error']}, status=status.HTTP_404_NOT_FOUND)
+        
+        data = response.json()['Search']
+        
+        res = []
+        
+        for i in range(0, len(data), chunk_size):
+            res.append(data[i: i + chunk_size])
+        
+        return Response(res, status=status.HTTP_200_OK)
+
+class ShowInfo(APIView):
+    
+    OMBD_API_ENDPOINT = f'http://www.omdbapi.com/'
+    
+    def get(self, request, format=None):
+        
+        imdb_id = request.query_params.get('imdb_id')
+        
+        if not imdb_id:
+            return Response({"detail": "imdb_id must not be empty"}, status=status.HTTP_400_BAD_REQUEST)
+
+        params = {
+            'apikey': os.getenv('OMDB_KEY'),
+            'i': imdb_id,
+            'plot': 'full'
+        }
+        
+        url = f'{self.OMBD_API_ENDPOINT}?{urlencode(params)}'
+        response = requests.get(url)
+        
+        if response.status_code != 200:
+            return Response({"detail": "external endpoint died"}, status=status.HTTP_404_NOT_FOUND)
+        
+        data = response.json()
+        
+        del data['Response']
+        
+        return Response(data, status=status.HTTP_200_OK)

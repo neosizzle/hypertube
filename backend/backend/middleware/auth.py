@@ -12,6 +12,8 @@ class AuthMiddleware:
 		("POST", "/api/auth/reset"),
 		("GET", "/api/videos"),
 		("GET", "/api/comments"),
+		("GET", "/api/search"),
+		("GET", "/api/info")
 		]
 	admin_path = "/admin" # allow all admin paths to pass, they use another auth system
 	media_path = "/media" # allow all media paths to pass, they are publoic

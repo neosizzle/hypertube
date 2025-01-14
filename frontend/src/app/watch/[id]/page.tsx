@@ -29,42 +29,6 @@ const exit = {
   }
 }
 
-function Video({ id } : { id: number}) {
-
-  return (
-    <Link href={`/watch/${id}`} className="w-full flex flex-row p-4 space-x-4 hover:bg-black/10 rounded-lg">
-      <div className="w-[35%] aspect-video bg-black rounded-xl"></div>
-      <div className="text-black flex-col space-y-1">
-        <div className="font-bold text-2xl">Episode 2</div>
-        <div className="font-medium">Lorem ipsum dolor sit amet</div>
-      </div>
-    </Link>
-  )
-}
-
-function OtherVideosCard() {
-
-  return (
-    <div className="flex flex-col w-1/3 h-[44rem] bg-gray-100 rounded-lg p-5">
-      <div className="flex flex-row justify-between items-center p-4">
-        <div className="text-black text-bold text-4xl">Episodes</div>
-        <select className="text-black w-auto px-2 selection:font-medium text-xl bg-transparent hover:bg-black/10 outline-none rounded-lg">
-          <option>Season 1</option>
-          <option>Season 2</option>
-        </select>
-      </div>
-      <div className="overflow-y-auto">
-        <Video id={1}/>
-        <Video id={2}/>
-        <Video id={3}/>
-        <Video id={4}/>
-        <Video id={5}/>
-      </div>
-    </div>
-  )
-
-}
-
 function CommentInput({ profilePicURL, isLoggedIn }: { profilePicURL: string, isLoggedIn: boolean }) {
 
   const [commenting, setCommenting] = useState(false)
@@ -154,38 +118,14 @@ function VideoInfo({ id }: { id: string }) {
   )
 }
 
-function ShowInfo({ id }: {id : string}) {
-
-  const [title, setTitle] = useState('Squid Game')
-
-  return (
-    <div className="flex flex-col h-full bg-gray-100 rounded-lg p-9 text-black space-y-4">
-      <div className="space-y-1">
-        <div className="text-2xl font-semibold">Show Summary</div>
-        <div className="text-lg">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>
-      </div>
-      <div className="space-y-1">
-        <div className="text-2xl font-semibold">Ratings</div>
-        <div className="text-lg"></div>
-      </div>
-      <div className="space-y-1">
-        <div className="text-2xl font-semibold">Cast</div>
-        <div className="text-lg"></div>
-      </div>
-    </div>
-  )
-
-}
-
 function TorrentInfo() {
 
   return (
-    <div className="flex flex-col h-full bg-gray-100 rounded-lg p-5">
+    <div className="flex flex-col w-1/3 h-[44rem] bg-gray-100 rounded-lg p-5">
       <div className="text-black text-bold text-4xl p-4">Torrent Info</div>
     </div>
   )
 }
-
 
 export default function Watch() {
 
@@ -198,18 +138,10 @@ export default function Watch() {
       <div className="flex flex-col justify-center py-10 px-16 mb-auto space-y-8">
         <div className="flex flex-row space-x-8 h-full">
           <iframe className="w-[65%] aspect-video bg-black text-black rounded-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ"/>
-          <OtherVideosCard />
+          <TorrentInfo />
         </div>
-        <div className="flex flex-row space-x-8 w-full">
-          <div className="flex flex-col space-y-8 w-[65%]">
-            <VideoInfo id={id}/>
-            <CommentSection />
-          </div>
-          <div className="flex flex-col space-y-8 w-1/3">
-            <ShowInfo id={showId} />
-            <TorrentInfo />
-          </div>
-        </div>
+        <VideoInfo id={id}/>
+        <CommentSection />
       </div>
       <Footer />
     </div>
