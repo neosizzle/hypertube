@@ -68,6 +68,20 @@ class VideoDetail(APIView):
 			error(e)
 			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class VideoWatchedDetail(APIView):
+	def post(self, request, pk, format=None):
+		try:
+			video = Video.objects.get(pk=pk)
+			user = request.app_user
+			video.watched_by.add(user)
+			serializer = VideoSerializer(video)
+			return Response(serializer.data)
+		except Video.DoesNotExist:
+			return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+		except Exception as e:
+			error(e)
+			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class CommentList(APIView):
 	# NOTE: Required query parameters: video_id
 	def get(self, request, format=None):

@@ -38,6 +38,7 @@ urlpatterns = [
 
     # videos
     path('api/videos', video_views.VideoList.as_view()),
+    path('api/videos/watched/<int:pk>', video_views.VideoWatchedDetail.as_view()),
     path('api/videos/<int:pk>', video_views.VideoList.as_view()),
     path('api/comments', video_views.CommentList.as_view()),
     path('api/search', video_views.SearchExternalSource.as_view()),
