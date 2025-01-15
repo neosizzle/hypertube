@@ -43,6 +43,15 @@ function useDebounce(cb: any, delay: number) {
   return debounceValue;
 }
 
+function chunkArray(array: any[], chunkSize: number) {
+
+  let chunks = []
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize))
+  }
+  return (chunks)
+}
+
 export default function Search() {
 
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
@@ -54,7 +63,7 @@ export default function Search() {
 
   const showInfoCache = useRef<{ [key: string]: FullInfo }>({});
 
-  const debounce = useDebounce(searchQuery, 3000)
+  const debounce = useDebounce(searchQuery, 1000)
 
   useEffect(() => {
     console.log("Debounced:", searchQuery);
@@ -66,35 +75,42 @@ export default function Search() {
     if (debounceQuery === '') return
 
     console.log("called search api with " + searchQuery)
-    fetch(`http://localhost:8000/api/search?query=${encodeURIComponent(searchQuery)}`, {
+    fetch(`http://localhost:8000/api/show/search?query=${encodeURIComponent(searchQuery)}`, {
       method: 'GET',
     }).then((data) => {
-      if (data.ok) data.json().then((json) => setSearchResults(json))
+      if (data.ok) data.json().then((json) => setSearchResults(chunkArray(json, 6)))
     }).catch((error) => console.error(error))
   }, [debounceQuery])
 
+
+  useEffect(() => {
+    console.log("Results: " + JSON.stringify(searchResults))
+  }, [searchResults])
+
   const handleClickShowCard = (data: ShortInfo) => {
 
-    if (!(data.imdbID in showInfoCache.current)) {
+    if (!(data.id in showInfoCache.current)) {
       console.log("Not in cache")
 
-      fetch(`http://localhost:8000/api/info?imdb_id=${data.imdbID}`, {
+      fetch(`http://localhost:8000/api/show/info?id=${data.id}&type=${data.type}`, {
         method: 'GET',
       }).then((resp) => {
         if (resp.ok) resp.json().then((json) => {
-          showInfoCache.current[data.imdbID] = json as FullInfo
+          showInfoCache.current[data.id.toString() + data.type] = json
           setShowInfo(json)
+          setOpenModal(true)
         })
       }).catch((error) => console.error(error))
-    } else setShowInfo(showInfoCache.current[data.imdbID])
-
-    setOpenModal(true)
+    } else {
+      setShowInfo(showInfoCache.current[data.id.toString() + data.type])
+      setOpenModal(true)
+    }
   }
 
   return (
     <div className="h-screen w-full overflow-x-hidden bg-white flex flex-col justify-between">
       <Header />
-      <div className="h-auto w-full flex flex-col justify-center py-10 px-16 mb-auto space-y-8 overflow-y-hidden">
+      <div className="h-auto w-full flex flex-col justify-center py-10 px-16 mb-auto space-y-8">
         <div className="text-black text-4xl font-medium pt-12">Search results for: "{searchQuery}"</div>
         <div className="space-y-24 py-12 pb-24 w-full">
           { searchResults.map((chunk, i) => <ResultRow key={i} data={chunk} onClick={handleClickShowCard}/> )}

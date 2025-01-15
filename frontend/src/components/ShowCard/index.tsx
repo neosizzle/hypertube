@@ -16,9 +16,9 @@ function CardInfoExtension({ info } : { info: ShortInfo }) {
           px-3">
         <div className="flex flex-row w-full h-full items-center justify-between">
           <div className="flex flex-row space-x-2 justify-center items-center">
-            <div className="font-medium text-xs text-black">{info.Type.charAt(0).toUpperCase() + info.Type.slice(1)}</div>
+            <div className="font-medium text-xs text-black">{info.type.charAt(0).toUpperCase() + info.type.slice(1)}</div>
             <Image src={"/dot.svg"} alt="dot" width={3} height={3} />
-            <div className="font-medium text-xs text-black">{info.Year}</div>
+            <div className="font-medium text-xs text-black">{new Date(info.date).getFullYear()}</div>
           </div>
         </div>
       </motion.div>
@@ -47,9 +47,9 @@ export default function ShowCard({ info, position, onClick } : { info: ShortInfo
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       className="relative group z-0">
         <div className="bg-black aspect-video w-full rounded-lg group-hover:rounded-b-none relative">
-          <Image src={info.Poster === 'N/A' ? '/discord.svg' : info.Poster} alt={info.Title} width={1000} height={1000}
+          <Image src={info.poster_path || '/dicsord.svg'} alt={info.title || 'test'} width={1000} height={1000}
           className="w-full h-full -z-10 object-cover rounded-lg opacity-80"/>
-          <div className="absolute bottom-[10%] px-4 z-10 text-white font-bold text-lg inline-block">{info.Title}</div>
+          <div className="absolute bottom-[10%] px-4 z-10 text-white font-bold text-lg inline-block">{info.title}</div>
           <div className="absolute top-0 w-full h-full z-0 bg-gradient-to-b from-transparent to-black/70 rounded-lg"></div>
         </div>
         {hover && <CardInfoExtension info={info} />}

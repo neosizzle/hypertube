@@ -41,8 +41,10 @@ urlpatterns = [
     path('api/videos/watched/<int:pk>', video_views.VideoWatchedDetail.as_view()),
     path('api/videos/<int:pk>', video_views.VideoList.as_view()),
     path('api/comments', video_views.CommentList.as_view()),
-    path('api/search', video_views.SearchExternalSource.as_view()),
-    path('api/info', video_views.ShowInfo.as_view())
+    path('api/show/search', video_views.SearchExternalSource.as_view()),
+    path('api/show/popular', video_views.TrendingShows.as_view()),
+    path('api/show/info', video_views.ShowInfo.as_view()),
+    path('api/show/tv/season', video_views.SeasonInfo.as_view())
 ]
 
 from django.conf import settings
