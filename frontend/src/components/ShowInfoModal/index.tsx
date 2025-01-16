@@ -1,49 +1,121 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image"
 import Modal from "../modal";
-import { FullInfo, MovieInfo, TVInfo, TVSeasonInfo, EpisodeInfo } from "../../../types/ShowInfo";
-import Link from "next/link";
-
-function Video({ id, title, content, numbering } : { id: number, numbering?: number, title: string ,content: string}) {
-
-  return (
-    <Link href={`/watch/${id}`} className="w-full flex flex-row p-4 space-x-4 hover:bg-black/10 rounded-lg">
-      <div className="flex justify-center items-center text-2xl text-black">{numbering}</div>
-      <div className="w-[20%] aspect-video bg-black rounded-xl"></div>
-      <div className="text-black flex-col space-y-1">
-        <div className="font-bold text-2xl">{title}</div>
-        <div className="font-medium text-ellipsis">{content}</div>
-      </div>
-    </Link>
-  )
-}
+import { FullInfo, MovieInfo, TVInfo, TVSeasonInfo, EpisodeInfo, Cast, Crew } from "../../../types/ShowInfo";
+import { useRouter } from "next/navigation";
+import { SearchContext } from "@/providers/SearchProvider";
 
 function Episode({ info } : { info: EpisodeInfo }) {
 
+  const router = useRouter()
+  const { setSearchQuery, setIsOpen } = useContext(SearchContext);
+
+  const parseDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month is 0-indexed
+  };
+
+  const getAiringDate = (dateString: string) => {
+    
+    const date = parseDate(dateString)
+    const daysUntil = Math.ceil((date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const weeksUntil = Math.ceil(daysUntil / 7)
+
+    if (daysUntil > 0 && daysUntil <= 7)
+      return ('Airing in ' + daysUntil + ' day' + (daysUntil > 1 ? 's': ''))
+    else if (daysUntil > 7 && daysUntil <= 31)
+      return ('Airing in ' + weeksUntil + ' week' + (weeksUntil > 1 ? 's': ''))
+
+    return ('Airing in ' + parseDate(info.air_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long'}))
+  }
+
+  const getSubTitle = () => {
+
+    if (info.air_date && info.runtime) {
+      return ((parseDate(info.air_date).getTime() < Date.now()) ? info.runtime + 'm' : getAiringDate(info.air_date))
+    } else if (info.air_date) {
+      return (getAiringDate(info.air_date))
+    } else if (info.runtime) {
+      return (info.runtime + 'm')
+    }
+    return ('')
+  }
+
+  const handleClick = () => {
+    setSearchQuery('')
+    setIsOpen(false)
+    router.push(`/watch/${info.id}`)
+  }
+
   return (
-    <Link href={`/watch/${info.id}`} className="w-full flex flex-row p-4 space-x-4 hover:bg-black/10 rounded-lg">
-      <div className="flex w-5 justify-center items-center text-2xl text-black">{info.episode_number}</div>
-      <Image src={info.still_path} alt={info.title !== '' ? `Episode ${info.episode_number}` : info.title} width={1920} height={1000}
-      className="w-48 aspect-video object-cover z-0 rounded-lg"/>
+    <button className="w-full flex flex-row px-4 lg:px-4 py-2 lg:py-4 space-x-2 lg:space-x-4 hover:bg-black/10 rounded-lg"
+    onClick={handleClick}>
+      <div className="flex w-3 lg:w-5 justify-center items-center text-md lg:text-2xl text-black">{info.episode_number}</div>
+      <Image src={info.still_path} alt={info.title !== '' ? info.title : `Episode ${info.episode_number}`} width={1920} height={1000}
+      className="w-24 lg:w-48 aspect-video object-cover z-0 rounded-lg"/>
       <div className="text-black flex-col space-y-1 w-[30rem]">
-        <div className="flex flex-row justify-between">
-          <div className="font-bold text-lg">{info.title !== '' ? `Episode ${info.episode_number}` : info.title}</div>
-          <div className="text-medium">{info.runtime + 'm'}</div>
+        <div className="flex flex-row justify-between items-center">
+          <div className="font-bold text-sm lg:text-lg line-clamp-1 lg:line-clamp-2 text-ellipsis text-left">{info.title !== '' ? info.title : `Episode ${info.episode_number}`}</div>
+          <div className="text-xs lg:text-lg hidden md:block">{getSubTitle()}</div>
         </div>
-        <div className="font-medium text-ellipsis line-clamp-3">{info.overview}</div>
+        <div className='text-xs md:text-md lg:text-lg text-ellipsis line-clamp-2 text-left'>{info.overview}</div>
       </div>
-    </Link>
+    </button>
+  )
+}
+
+function Movie({info}: { info: FullInfo}) {
+
+  const router = useRouter()
+  const { setSearchQuery, setIsOpen } = useContext(SearchContext);
+
+  const handleClick = () => {
+    setSearchQuery('')
+    setIsOpen(false)
+    router.push(`/watch/${info.id}`)
+  }
+
+  return (
+    <div className="px-4 lg:px-12 lg:py-4">
+      <button className="w-full flex flex-row space-x-4 hover:bg-black/10 rounded-lg"
+      onClick={handleClick}>
+        <Image src={info.poster_path} alt={info.title} width={1920} height={1000}
+        className="w-24 lg:w-48 aspect-video object-cover z-0 rounded-lg"/>
+          <div className="text-black flex-col space-y-1 w-full">
+            <div className="flex flex-row justify-between items-center">
+            <div className="font-bold text-base lg:text-lg">{'Full Movie'}</div>
+          <div className="text-xs md:text-md lg:text-lg">{(info.details as MovieInfo).runtime + 'm'}</div>
+          </div>
+        </div>
+      </button>
+    </div>
   )
 }
 
 
-function Movie({info}: { info: FullInfo}) {
+
+function Credits({info}: { info: FullInfo}) {
+
+  const buildCreditsMap = (data: Cast[] | Crew[]) => {
+
+    const map: { [key: string]: string[] } = {}
+
+    data.forEach((c) => {
+      (c.known_for_department in map) ? map[c.known_for_department].push(c.name) : map[c.known_for_department] = [c.name]
+    })
+
+    return (map)
+  }
+  
+  const castMap = buildCreditsMap(info.credits.cast)
+  const crewMap = buildCreditsMap(info.credits.crew)
 
   return (
-    <div className="px-12 py-4">
-      <Video id={1} title={"Movie"} content={""} />
+    <div className="px-4 lg:px-12 text-black font-medium space-y-1">
+      <div>Starring: {[...new Set(castMap['Acting'])].slice(0, 3).join(', ')}</div>
+      <div>Directed by: {[...new Set(crewMap['Directing'])].slice(0, 2).join(', ')}</div>
     </div>
   )
 
@@ -53,7 +125,7 @@ function Episodes({info}: { info: FullInfo}) {
 
   const [seasonNum, setSeasonNum] = useState((info.details as TVInfo).seasons[0].season_number)
   const [episodes, setEpisodes] = useState<TVSeasonInfo | null>(null)
-  
+
   useEffect(() => {
     fetch(`http://localhost:8000/api/show/tv/season?id=${info.id}&season_number=${seasonNum}`, {
       method: 'GET',
@@ -63,16 +135,17 @@ function Episodes({info}: { info: FullInfo}) {
   }, [seasonNum, info])
 
   return (
-    <div className="px-8 space-y-4">
-      <div className="flex flex-row justify-between items-center p-4">
-        <div className="text-black text-bold text-4xl">Episodes</div>
-        <select className="text-black w-auto px-2 selection:font-medium text-xl bg-transparent hover:bg-black/10 outline-none rounded-lg"
+    <div className="lg:px-8 space-y-4">
+      <div className="flex flex-row justify-between items-center px-4">
+        <div className="text-black text-bold text-lg lg:text-3xl">Episodes</div>
+        <select className="text-black w-auto h-12 items-center px-2 text-xs md:text-md lg:text-lg bg-transparent hover:bg-black/10 outline-none rounded-lg"
         onChange={(e) => setSeasonNum(Number(e.target.value))}>
           {
-            (info.details as TVInfo).seasons.map((s, index) => <option key={index} value={s.season_number as number}>{'S' + s.season_number + ': ' + s.name}</option>)
+            (info.details as TVInfo).seasons.map((s, index) =><option key={index} value={s.season_number as number}>{'S' + s.season_number + ': ' + s.name}</option>)
           }
         </select>
       </div>
+      <div className="px-4 text-black text-xs md:text-md lg:text-lg">{episodes && episodes.overview}</div>
       <div className="overflow-y-auto">
         {
           episodes && episodes.episodes.map((e, index) => (<Episode key={index} info={e}/>))
@@ -87,48 +160,38 @@ export default function ShowInfoModal({ open, onClose, info }: { open: boolean, 
 
   const ref = useRef<HTMLDivElement>(null)
 
-  // useEffect(() => {
-  //   if (open) {
-  //     document.body.style.overflow = 'hidden';
-  //     document.body.style.paddingRight = '16px';
-  //   } else {
-  //     document.body.style.overflow = 'visible';
-  //     document.body.style.paddingRight = '0px';
-  //   }
-  //   return () => {
-  //     document.body.style.overflow = 'visible';
-  //     document.body.style.paddingRight = '0px';
-  //   };
-  // }, [open]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!ref.current?.contains(event.target as Node)) onClose()
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => { document.removeEventListener("mousedown", handleClickOutside) }
-  }, [ref])
-
-
   if (info === null)
     return (<></>)
 
   return (
     <Modal open={open}>
+      <div
+      className="flex w-screen h-full justify-center items-start"
+      onClick={(e) => (!ref.current?.contains(e.target as Node)) ? onClose() : ''}
+      >
       <div className={`flex w-screen h-full justify-center items-start py-12 ${open ? 'overflow-auto' : 'overflow-hidden'}`}>
-        <div className="flex flex-col w-1/2 h-auto pb-8 bg-white rounded-lg " ref={ref}>
+        <div className="flex flex-col w-[85%] lg:w-1/2 h-auto pb-8 bg-white rounded-lg " ref={ref}>
           <div className="w-full aspect-video relative">
             <Image src={info.backdrop_path} alt={info.title} width={1920} height={1000}
             className="w-full aspect-video z-0 object-cover rounded-lg"/>
-            <div className="absolute bottom-[10%] px-12 z-10 text-black font-bold text-4xl inline-block">{info.title}</div>
-            <div className="absolute top-0 w-full aspect-video z-0 bg-gradient-to-b from-transparent from-40% to-90% to-white rounded-lg"></div>
+            <div className="absolute bottom-0 lg:bottom-[5%] px-4 lg:px-12 z-10 text-black font-bold text-xl lg:text-5xl inline-block">{info.title}</div>
+            <div className="absolute top-0 w-full aspect-video z-0 bg-gradient-to-b from-transparent from-40% to-90% to-white rounded-lg" />
           </div>
-          <div className="px-12 text-black font-medium">
-            {info.overview}
+          <div className="space-y-4">
+            <div className="px-4 lg:px-12 text-black text-xs md:text-md lg:text-lg font-medium">
+              {info.overview}
+            </div>
+            <div className="text-xs md:text-md lg:text-lg space-y-1">
+              {info.original_title !== info.title && <div className="px-4 lg:px-12 text-black inline-block">Original Title: {info.original_title}</div>}
+              <div className="px-4 lg:px-12 text-black font-medium">
+                Genres: {info.genres.map((g) => g.name).join(', ')}
+              </div>
+              <Credits info={info}/>
+            </div>
+            {info.type === "tv" ? <Episodes info={info}/> : <Movie info={info}/>}
           </div>
-          {info.type === "tv" ? <Episodes info={info}/> : <Movie info={info}/>}
-          
         </div>
+      </div>
       </div>
     </Modal>
   )

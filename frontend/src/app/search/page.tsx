@@ -56,7 +56,7 @@ export default function Search() {
 
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
   const [debounceQuery, setDebounceQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<any[][]>([])
+  const [searchResults, setSearchResults] = useState<ShortInfo[]>([])
   const [openModal, setOpenModal] = useState(false)
   const [showInfo, setShowInfo] = useState<FullInfo | null>(null)
 
@@ -78,7 +78,7 @@ export default function Search() {
     fetch(`http://localhost:8000/api/show/search?query=${encodeURIComponent(searchQuery)}`, {
       method: 'GET',
     }).then((data) => {
-      if (data.ok) data.json().then((json) => setSearchResults(chunkArray(json, 6)))
+      if (data.ok) data.json().then((json) => setSearchResults(json))
     }).catch((error) => console.error(error))
   }, [debounceQuery])
 
@@ -110,10 +110,12 @@ export default function Search() {
   return (
     <div className="h-screen w-full overflow-x-hidden bg-white flex flex-col justify-between">
       <Header />
-      <div className="h-auto w-full flex flex-col justify-center py-10 px-16 mb-auto space-y-8">
-        <div className="text-black text-4xl font-medium pt-12">Search results for: "{searchQuery}"</div>
-        <div className="space-y-24 py-12 pb-24 w-full">
-          { searchResults.map((chunk, i) => <ResultRow key={i} data={chunk} onClick={handleClickShowCard}/> )}
+      <div className="h-auto w-full flex flex-col justify-center py-10 px-10 lg:px-16 mb-auto space-y-8">
+        <div className="text-black text-sm lg:text-4xl font-medium pt-12">Search results for: "{searchQuery}"</div>
+        <div className='flex flex-row flex-wrap gap-2 justify-center lg:justify-start'>
+          {
+            searchResults.map((info, i) => (<ShowCard info={info} key={i} onClick={() => handleClickShowCard(info)}/>))
+          }
         </div>
       </div>
       <ShowInfoModal open={openModal} onClose={() => setOpenModal(false)} info={showInfo}/>

@@ -213,7 +213,10 @@ class ShowInfo(APIView):
             return Response({"detail": "id or type must not be empty"},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        params = { 'api_key': os.getenv('TMDB_KEY') }
+        params = {
+            'api_key': os.getenv('TMDB_KEY'),
+            'append_to_response': 'credits'
+        }
         
         url = f'{self.TMDB_API_ENDPOINT}/{type}/{tmdb_id}?{urlencode(params)}'
         response = requests.get(url)
@@ -228,7 +231,7 @@ class ShowInfo(APIView):
             'adult', 'backdrop_path', 'genres', 'homepage', 'id',
             'original_language', 'overview', 'popularity', 'poster_path',
             'production_companies', 'production_countries', 'spoken_languages',
-            'tagline', 'vote_average', 'vote_count'
+            'tagline', 'vote_average', 'vote_count', 'credits'
         )}
         
         payload['title'] = data['title'] if type == 'movie' else data['name']
@@ -247,6 +250,20 @@ class ShowInfo(APIView):
             if payload.get('poster_path') else self.DEFAULT_POSTER_PATH
         payload['backdrop_path'] = self.TMDB_IMAGE_PATH + payload['backdrop_path'] \
             if payload.get('backdrop_path') else self.DEFAULT_POSTER_PATH
+        
+        
+        payload['credits']['cast'] = [{k: v for k, v in cast.items()
+                                       if k in ('id', 'known_for_department',
+                                           'name', 'original_name',
+                                           'character')} 
+                                      for cast in payload['credits']['cast']]
+            
+            
+        payload['credits']['crew'] = [{k: v for k, v in crew.items()
+                                       if k in ('id', 'known_for_department',
+                                           'original_name', 'character',
+                                           'name', 'department', 'job')}
+                                      for crew in payload['credits']['crew']]
         
         return Response(payload, status=status.HTTP_200_OK)
 
@@ -286,6 +303,9 @@ class SeasonInfo(APIView):
 
         for i, ep in enumerate(payload['episodes']):
             payload['episodes'][i]['still_path'] = self.TMDB_IMAGE_PATH + ep['still_path'] \
-            if ep.get('still_path') else self.DEFAULT_POSTER_PATH
+                if ep.get('still_path') else self.DEFAULT_POSTER_PATH
+
+            payload['episodes'][i]['title'] = ep['name']
+            del payload['episodes'][i]['name']
         
         return Response(payload, status=status.HTTP_200_OK)

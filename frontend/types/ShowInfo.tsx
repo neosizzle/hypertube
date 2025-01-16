@@ -88,6 +88,22 @@ export type TVInfo = {
   seasons: Season[]
 }
 
+export type Cast = {
+  id: number
+  known_for_department: string
+  name: string
+  original_name: string
+  character: string
+}
+
+export type Crew = {
+  id: number
+  known_for_department: string
+  name: string
+  original_name: string
+  department: string
+  job: string
+}
 
 export type FullInfo = {
   adult: boolean
@@ -109,6 +125,10 @@ export type FullInfo = {
   title: string
   original_title: string
   details: MovieInfo | TVInfo
+  credits: {
+    cast: Cast[]
+    crew: Crew[]
+  }
 }
 
 

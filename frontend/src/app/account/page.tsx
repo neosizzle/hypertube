@@ -209,36 +209,36 @@ export default function Account() {
   }
 
   return (
-    <div className="h-screen w-screen bg-white flex flex-col justify-between">
+    <div className="h-auto w-full bg-white flex flex-col justify-between">
       <Header />
-      <div className="flex flex-col justify-center py-10 px-16 grow mb-auto border-2 space-y-4">
+      <div className="flex flex-col justify-center py-10 px-8 lg:px-16 grow mb-auto space-y-4">
         <div className="text-black text-4xl bg-clip-text font-bold">Account</div>
         <hr className="w-full h-1 bg-gradient-to-r from-purple-200 to-[#9EFCFF] bg-clip-border my-4 rounded-md" />
         <div className="flex flex-col space-y-4">
-          <div className="text-black text-xl font-medium ">Profile Details</div>
-          <div className="flex flex-row justify-start space-x-8">
+          <div className="text-black text-xl font-medium px-2 lg:px-0">Profile Details</div>
+          <div className="flex flex-col md:flex-row items-center lg:items-start lg:justify-start md:space-x-8">
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-1">
                 <div className="text-black font-bold">Username</div>
-                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2 
+                <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={username} onInput={(e) => setUsername(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
                 <div className="text-black font-bold">Email</div>
-                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2
+                <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={email} onInput={(e) => setEmail(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
                 <div className="text-black font-bold">First Name</div>
-                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2
+                <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={firstName} onInput={(e) => setFirstName(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
                 <div className="text-black font-bold">Last Name</div>
-                <input className="w-96 h-8 lg:h-12 bg-white rounded-lg p-2
+                <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={lastName} onInput={(e) => setLastName(e.currentTarget.value)}/>
               </div>
@@ -247,11 +247,11 @@ export default function Account() {
                 animate={enter}>
                   {errorMsg}
               </motion.div>}
-              <button className={`w-48 h-8 lg:h-10 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
+              <button className={`w-72 lg:w-48 h-8 lg:h-10 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
               hover:scale-105 hover:drop-shadow-sm transition-all ${updateSuccess ?'bg-green-400 text-black' : 'bg-purple-400'}`}
               onClick={updateProfile}>{updateSuccess ? 'Success!' : 'Update Profile'}</button>
             </div>
-            <div className="flex flex-col items-center relative space-y-5">
+            <div className="flex flex-col relative space-y-5 p-5 md:p-0 items-center">
               <div className="text-black font-bold justify-start">Profile Picture</div>
               <Image src={`http://localhost:8000${profilePicURL}`} alt="profile picture" width={150} height={150} 
               className="rounded-full w-32 h-32"/>
@@ -269,13 +269,13 @@ export default function Account() {
             </div>
           </div>
         </div>
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4 px-2 lg:px-0">
           {/* TODO: change button based on auth method*/}
           <div className="text-black text-xl font-medium">Password and Authentication</div>
           <button className="w-48 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
                   hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {router.push('/reset')}}>Reset Password</button>
         </div>
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4 px-2 lg:px-0">
           <div className="text-black text-xl font-medium">Account Settings</div>
           <button className="w-48 h-8 lg:h-10 bg-red-500 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
                   hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {setIsOpen(true)}}>Delete Account</button>
