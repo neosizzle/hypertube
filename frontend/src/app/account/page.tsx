@@ -1,7 +1,7 @@
 "use client"
 
-import Footer from "@/components/footer";
-import Header from "@/components/header";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 import Modal from '@/components/modal';
 import { motion } from "motion/react";
 import Image from "next/image"

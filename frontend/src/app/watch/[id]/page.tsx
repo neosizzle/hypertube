@@ -1,13 +1,11 @@
 'use client'
 
-import Footer from "@/components/footer"
-import Header from "@/components/header"
-import { useParams } from "next/navigation"
+import Footer from "@/components/Footer"
+import Header from "@/components/Header"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { motion } from "motion/react"
 import Image from "next/image"
-import { profile } from "console"
-import Link from "next/link"
 
 const enter = {
   opacity: 1,
@@ -39,17 +37,17 @@ function CommentInput({ profilePicURL, isLoggedIn }: { profilePicURL: string, is
 
   return (
     <div className="flex flex-row space-x-4 p-4">
-      <Image src={profilePicURL} alt="user" width={25} height={25} className="justify-start items-center self-start w-8 h-8 rounded-full"/>
+      <Image src={profilePicURL} alt="user" width={1000} height={1000} className="justify-start items-center self-start w-5 h-5 lg:w-8 lg:h-8 rounded-full"/>
       <div className="flex flex-col space-y-2 w-full">
-        <input className="w-full h-8 text-black text-md bg-transparent outline-none" placeholder={isLoggedIn ? "Add a comment..." : "You need to be logged in to comment."}
+        <input className="w-full h-8 text-black text-xs lg:text-md bg-transparent outline-none" placeholder={isLoggedIn ? "Add a comment..." : "You need to be logged in to comment."}
         onFocus={() => isLoggedIn ? setCommenting(true) : ''} disabled={!isLoggedIn}/>
         <motion.div className="" initial={exit} animate={commenting ? enter : exit} >
           <hr className="w-full h-1 bg-gradient-to-r from-purple-200 to-[#9EFCFF] bg-clip-border mb-2 rounded-md" />
           <div className="flex flex-row justify-start items-center">
-            <button className="h-8 bg-purple-400 rounded-lg px-4 text-white text-sm
+            <button className="h-8 bg-purple-400 rounded-lg px-4 text-white text-xs lg:text-sm
             hover:scale-105 hover:drop-shadow-sm transition-all justify-center items-center" onClick={handleComment}
             >Comment</button>
-            <button className="h-8 bg-transparent px-4 text-black text-sm
+            <button className="h-8 bg-transparent px-4 text-black text-xs lg:text-sm
             hover:text-gray-500" onClick={() => setCommenting(false)}
             >Cancel</button>
           </div>
@@ -59,18 +57,26 @@ function CommentInput({ profilePicURL, isLoggedIn }: { profilePicURL: string, is
   )
 }
 
-function Comment({ username, content }: { username: string, content: string }) {
+function Comment({ username, userID, content }: { username: string, userID: number, content: string }) {
+
+  const router = useRouter()
+
+  const handleClick = () => {
+    router.push(`/users/${userID}`)
+  }
 
   return (
-    <div className="flex flex-row space-x-4 p-4">
-      <Image src="/discord.svg" alt="user" width={25} height={25} className="justify-start items-center self-start w-8 h-8"/>
+    <div className="flex flex-row space-x-2 lg:space-x-4 p-4">
+      <Image src="/discord.svg" alt="user" width={1000} height={1000}
+      className="justify-start items-center self-start w-5 h-5 lg:w-8 lg:h-8 cursor-pointer rounded-full border-[1.5px] border-black"
+      onClick={handleClick}/>
       <div className="flex flex-col space-y-1">
-        <div className="text-black text-md font-bold">{'@' + username}</div>
-        <div className="text-black text-md">{content}</div>
+        <div className="text-black text-xs lg:text-md font-bold cursor-pointer"
+        onClick={handleClick}>{'@' + username}</div>
+        <div className="text-black text-xs lg:text-md">{content}</div>
       </div>
     </div>
   )
-
 }
 
 function CommentSection() {
@@ -93,13 +99,13 @@ function CommentSection() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full bg-gray-100 rounded-lg p-5">
-      <div className="text-black text-bold text-4xl p-4">Comments</div>
+    <div className="flex flex-col h-full bg-gray-100 lg:rounded-lg lg:p-5">
+      <div className="text-black text-bold text-xl lg:text-4xl p-4">Comments</div>
       <CommentInput profilePicURL={profilePicURL} isLoggedIn={isLoggedIn}/>
-      <Comment username="skibidfan69" content="i fucking hate this show!!!"/>
-      <Comment username="skibidfan69" content="i fucking hate this show!!!"/>
-      <Comment username="skibidfan69" content="i fucking hate this show!!!"/>
-      <Comment username="skibidfan69" content="i fucking hate this show!!!"/>
+      <Comment username="skibidfan69" userID={1} content="i fucking hate this show!!!"/>
+      <Comment username="skibidfan69" userID={1}content="i fucking hate this show!!!"/>
+      <Comment username="skibidfan69" userID={1}content="i fucking hate this show!!!"/>
+      <Comment username="skibidfan69" userID={1} content="i fucking hate this show!!!"/>
   </div>
   )
 
@@ -110,10 +116,10 @@ function VideoInfo({ id }: { id: string }) {
   const [title, setTitle] = useState('Squid Game')
 
   return (
-    <div className="space-y-4 flex flex-col items-start">
-      <div className="text-black font-bold text-5xl">{title}</div>
-      <div className="text-black font-medium text-2xl">S1E6</div>
-      <div className="text-black font-medium text-xl">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+    <div className="px-4 lg:space-y-4 flex flex-col items-start">
+      <div className="text-black font-bold text-2xl lg:text-5xl">{title}</div>
+      <div className="text-black font-medium text-md lg:text-2xl">S1E6</div>
+      <div className="text-black font-medium text-xs lg:text-xl pt-1 lg:pt-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
     </div>
   )
 }
@@ -130,15 +136,15 @@ function TorrentInfo() {
 export default function Watch() {
 
   const { id } : { id : string } = useParams()
-  const [showId, setShowId] = useState(id)
+  const [ showId ] = useState(id)
 
   return (
-    <div className="h-auto w-screen bg-white flex flex-col justify-between">
+    <div className="h-auto w-full bg-white flex flex-col justify-between">
       <Header />
-      <div className="flex flex-col justify-center py-10 px-16 mb-auto space-y-8">
-        <div className="flex flex-row space-x-8 h-full">
-          <iframe className="w-[65%] aspect-video bg-black text-black rounded-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ"/>
-          <TorrentInfo />
+      <div className="flex flex-col justify-center lg:py-10 lg:px-16 mb-auto space-y-4 lg:space-y-8">
+        <div className="flex flex-col lg:flex-row space-x-8 h-full">
+          <iframe className="w-full lg:w-[65%] aspect-video bg-black text-black lg:rounded-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ"/>
+          {/* <TorrentInfo /> */}
         </div>
         <VideoInfo id={id}/>
         <CommentSection />

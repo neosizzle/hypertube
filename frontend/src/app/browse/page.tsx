@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import ShowCard from "@/components/ShowCard";
-import { FullInfo, ShortInfo } from "../../../types/ShowInfo";
+import { FullInfo, ShortInfo } from "../../types/ShowInfo";
 import ShowInfoModal from "@/components/ShowInfoModal";
+import ShowGrid from "@/components/ShowGrid";
 
 export default function Browse() {
 
@@ -48,11 +49,7 @@ export default function Browse() {
       <Header />
       <div className="h-auto flex flex-col justify-center py-10 mb-auto">
         <div className="font-bold text-2xl text-black py-4 text-center lg:text-center px-4">Popular Shows</div>
-        <div className='flex flex-row flex-wrap gap-2 justify-center'>
-          {
-            trending.map((info, i) => (<ShowCard info={info} key={i} onClick={() => handleClickShowCard(info)}/>))
-          }
-        </div>
+        <ShowGrid data={trending} handleClickShowCard={handleClickShowCard} />
       </div>
       <ShowInfoModal open={openModal} onClose={() => setOpenModal(false)} info={showInfo}/>
       <Footer />

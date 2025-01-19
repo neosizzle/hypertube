@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "motion/react"
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { ShortInfo } from "../../../types/ShowInfo"
+import { ShortInfo } from "../../types/ShowInfo"
 
 function CardInfoExtension({ info } : { info: ShortInfo }) {
 
@@ -29,7 +29,7 @@ export default function ShowCard({info, position, onClick } : { info: ShortInfo,
   const [hover, setHover] = useState(false)
 
   return (
-    <motion.div className="w-32 h-48 md:h-auto lg:w-56 xl:w-72 lg:aspect-video group z-0 relative"
+    <motion.div className="w-auto md:aspect-video group z-0 relative"
     initial={{zIndex: "0"}}
     animate={{zIndex: hover ? 1 : 0}}
     style={{ transformOrigin: position || 'center' }}

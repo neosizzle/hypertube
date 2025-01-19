@@ -207,10 +207,6 @@ export default function Header() {
             <Image src={'/home.svg'} alt="logo" width={25} height={25} className="w-6 inline-block lg:hidden" onClick={handleClick('/browse')}/>
             <button className="font-bold hidden lg:inline-block" onClick={handleClick('/browse')}>Home</button>
           </div>
-          <div className="flex flex-row space-x-1">
-          <Image src={'/users.svg'} alt="logo" width={25} height={25} className="w-6 inline-block lg:hidden" onClick={handleClick('/users')}/>
-            <button className="font-bold hidden lg:inline-block" onClick={handleClick('/users')}>Users</button>
-          </div>
         </div>
         <div className="flex flex-row items-center justify-center space-x-4">
             <Search />
