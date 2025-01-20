@@ -3,9 +3,7 @@
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { json } from "stream/consumers"
 import { motion } from "motion/react"
-import { split } from "postcss/lib/list"
 
 const enter = {
   opacity: 1,

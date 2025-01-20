@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
         // protocol: 'http',
         // port: '8000',
         // pathname: '/media/*'
+      },
+      {
+        hostname: 'm.media-amazon.com'
+      },
+      {
+        hostname: 'image.tmdb.org'
       }
     ]
   }

@@ -69,7 +69,7 @@ function Search() {
     if (pathname.startsWith('/search')) return
     if (isOpen) document.addEventListener("mousedown", handleClickOutside)
     return () => { document.removeEventListener("mousedown", handleClickOutside) }
-  }, [ref])
+  }, [ref, isOpen])
 
   // preserve focus
   useEffect(() => { if (inputRef.current) inputRef.current.focus() }, [inputRef])
@@ -78,11 +78,15 @@ function Search() {
 
   // redirect to /search if start searching
   useEffect(() => {
-    (isSearching) ? router.push('/search') : router.push('/browse')
+    if (isSearching) {
+      router.push('/search')
+    } else if (isOpen) {
+      router.push('/browse')
+    }
   }, [isSearching])
 
   return (
-    <div className="flex flex-row w-68 h-10 justify-end items-center overflow-hidden" ref={ref}>
+    <div className="flex flex-row w-32 lg:w-64 h-10 justify-end items-center overflow-hidden" ref={ref}>
       <motion.div
       initial={ isOpen ? searchIconExit : searchIconEnter }
       animate={ isOpen ? searchIconEnter : searchIconExit }>
@@ -97,8 +101,8 @@ function Search() {
         else if (!isOpen && inputDivRef.current) inputDivRef.current.style.display = 'none'
         }}
       className="flex w-full h-10 rounded-md border-2 border-black p-2 space-x-2 justify-center items-center">
-        <Image priority src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6"/>
-        <input placeholder="Search" className="outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
+        <Image priority src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6 hidden lg:block"/>
+        <input placeholder="Search" className="w-full outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
         onInput={(e) => setSearchQuery((e.target as HTMLInputElement).value)} value={searchQuery} ref={inputRef}/>
         <Image priority src="/close.svg" alt="search" width={25} height={25} className="w-6 h-6" onClick={() => setSearchQuery('')}/>
       </motion.div>
@@ -147,6 +151,7 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
       <motion.div
       onHoverStart={toggleHover}
       onHoverEnd={toggleHover}
+      onClick={toggleHover}
       >
         <Image src={profilePicURL} alt="user" width={25} height={25}
         className="rounded-full w-6 h-6"/>
@@ -167,7 +172,9 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
 }
 
 export default function Header() {
-
+  
+  const router = useRouter()
+  const { searchQuery, setSearchQuery, isOpen, setIsOpen } = useContext(SearchContext);
   const [profilePicURL, setProfilePicURL] = useState('http://localhost:8000/media/profile_pics/default.png')
   const [login, setLogin] = useState(true)
 
@@ -182,12 +189,24 @@ export default function Header() {
     })
   }, [])
 
+  const handleClick = (route: string) => () => {
+    setSearchQuery('')
+    setIsOpen(false)
+    router.push(route)
+  }
+
   return (
     
-    <header className="flex flex-row top-0 text-black justify-between items-center py-3 px-16 bg-gradient-to-r from-purple-200 to-[#9efcff] z-10">
+    <header className="flex flex-row top-0 text-black justify-between items-center py-3 px-10 lg:px-16 bg-gradient-to-r from-purple-200 to-[#9efcff] z-10">
         <div className="flex flex-row items-center justify-center space-x-4">
-          <div className="bg-clip-text inline-block font-bold text-purple-400 text-base lg:text-2xl">hypertube</div>
-          <Link className="font-bold" href={"/browse"}>Home</Link>
+          <div className="flex flex-row space-x-1">
+            <Image src={'/logo.svg'} alt="logo" width={25} height={25} className="w-8"/>
+            <div className="bg-clip-text  font-bold text-purple-400 hidden lg:inline-block text-base lg:text-2xl">hypertube</div>
+          </div>
+          <div className="flex flex-row">
+            <Image src={'/home.svg'} alt="logo" width={25} height={25} className="w-6 inline-block lg:hidden" onClick={handleClick('/browse')}/>
+            <button className="font-bold hidden lg:inline-block" onClick={handleClick('/browse')}>Home</button>
+          </div>
         </div>
         <div className="flex flex-row items-center justify-center space-x-4">
             <Search />

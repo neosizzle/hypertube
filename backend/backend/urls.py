@@ -29,7 +29,8 @@ urlpatterns = [
 	path('api/users', app_users_views.AppUserList.as_view()),
     path('api/users/picture', app_users_views.AppUserPicture.as_view()),
     path('api/users/me', app_users_views.AppUserDetail.as_view()),
-    path('api/users/id/<int:pk>', app_users_views.AppUserOthersDetail.as_view()),
+    path('api/users/<int:pk>', app_users_views.AppUserOthersDetail.as_view()),
+    path('api/users/public/<int:pk>', app_users_views.AppUserOthersPublicDetail.as_view()),
     path('api/auth/login', app_users_views.AuthLogin.as_view()),
     path('api/auth/logout', app_users_views.AuthLogout.as_view()),
     path('api/auth/otp',  app_users_views.OTPRequest.as_view()),
@@ -41,7 +42,10 @@ urlpatterns = [
     path('api/videos/watched/<int:pk>', video_views.VideoWatchedDetail.as_view()),
     path('api/videos/<int:pk>', video_views.VideoList.as_view()),
     path('api/comments', video_views.CommentList.as_view()),
-
+    path('api/show/search', video_views.SearchExternalSource.as_view()),
+    path('api/show/popular', video_views.TrendingShows.as_view()),
+    path('api/show/info', video_views.ShowInfo.as_view()),
+    path('api/show/tv/season', video_views.SeasonInfo.as_view())
 ]
 
 from django.conf import settings

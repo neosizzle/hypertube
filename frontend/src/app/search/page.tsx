@@ -1,69 +1,67 @@
 'use client'
 
-import Footer from "@/components/footer";
-import Header from "@/components/header";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 import { SearchContext } from "@/providers/SearchProvider";
-import { useContext } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
-import { ShowInfo, SeriesData } from "@/components/ShowCard";
-import ShowCard from "@/components/ShowCard"
-
-let squid_game: ShowInfo = {
-  title: "Squid Game",
-  type: "series",
-  data: {
-    no_seasons: 2,
-    info: [
-      {
-        season_no: 1,
-        no_episodes: 9,
-        year:2021
-      },
-      {
-        season_no: 2,
-        no_episodes: 7,
-        year:2024
-      },
-    ]
-  } as SeriesData,
-  imdb: 8.0,
-  mal: 4.5,
-  summary: "Lorem ipsum dolor sit amet",
-  genres: ["Action", "Drama", "Mystery"],
-  produced_by: "bobo",
-  cast: [],
-  cover: "/discord.svg"
-}
-
-function ResultRow() {
-  return (
-    <div className="flex flex-row space-x-2 items-center justify-center">
-      <ShowCard info={squid_game} />
-      <ShowCard info={squid_game} />
-      <ShowCard info={squid_game} />
-      <ShowCard info={squid_game} />
-      <ShowCard info={squid_game} />
-      <ShowCard info={squid_game} />
-    </div>
-  )
-}
+import ShowInfoModal from "@/components/ShowInfoModal";
+import { FullInfo, ShortInfo } from "../../types/ShowInfo";
+import { useDebounce } from "@/hooks/useDebounce";
+import ShowGrid from "@/components/ShowGrid";
 
 export default function Search() {
 
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
+  const [debounceQuery, setDebounceQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<ShortInfo[]>([])
+  const [openModal, setOpenModal] = useState(false)
+  const [showInfo, setShowInfo] = useState<FullInfo | null>(null)
+  const showInfoCache = useRef<{ [key: string]: FullInfo }>({});
+  const debounce = useDebounce(searchQuery, 1000)
+
+  useEffect(() => { setDebounceQuery(searchQuery) }, [debounce]);
+
+  useEffect(() => {
+
+    if (debounceQuery === '') return
+
+    fetch(`http://localhost:8000/api/show/search?query=${encodeURIComponent(searchQuery)}`, {
+      method: 'GET',
+    }).then((data) => {
+      if (data.ok) data.json().then((json) => setSearchResults(json))
+    }).catch((error) => console.error(error))
+  }, [debounceQuery])
+
+  const handleClickShowCard = (data: ShortInfo) => {
+
+    if (!(data.id in showInfoCache.current)) {
+      console.log("Not in cache")
+
+      fetch(`http://localhost:8000/api/show/info?id=${data.id}&type=${data.type}`, {
+        method: 'GET',
+      }).then((resp) => {
+        if (resp.ok) resp.json().then((json) => {
+          showInfoCache.current[data.id.toString() + data.type] = json
+          setShowInfo(json)
+          setOpenModal(true)
+        })
+      }).catch((error) => console.error(error))
+    } else {
+      setShowInfo(showInfoCache.current[data.id.toString() + data.type])
+      setOpenModal(true)
+    }
+  }
+
 
   return (
-    <div className="h-auto w-full overflow-x-hidden bg-white flex flex-col justify-between">
+    <div className="h-screen w-full overflow-x-hidden bg-white flex flex-col justify-between">
       <Header />
-      <div className="h-auto flex flex-col justify-center py-10 px-16 mb-auto space-y-8 overflow-y-hidden">
-        <div className="text-black text-4xl font-medium pt-12">Search results for: "{searchQuery}"</div>
-        <div className="space-y-24 py-12">
-          <ResultRow />
-          <ResultRow />
-          <ResultRow />
-          <ResultRow />
-        </div>
+      <div className="h-auto w-full flex flex-col justify-center py-10 px-10 lg:px-16 mb-auto space-y-8">
+        <div className="text-black text-sm lg:text-4xl font-medium pt-12">Search results for: "{searchQuery}"</div>
+        <ShowGrid data={searchResults} handleClickShowCard={handleClickShowCard}/>
       </div>
+      <ShowInfoModal open={openModal} onClose={() => setOpenModal(false)} info={showInfo}/>
       <Footer />
     </div>
   )

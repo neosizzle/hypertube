@@ -323,6 +323,20 @@ class AppUserOthersDetail(APIView):
 			error(e)
 			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class AppUserOthersPublicDetail(APIView):
+	def get(self, request, pk, format=None):
+		try:
+			app_user = AppUser.objects.get(pk=pk)
+			serializer = AppUserSerializer(app_user)
+			filtered = {k: v for k, v in serializer.data.items()
+				if k not in ['email', 'ft_iden', 'discord_iden', 'github_iden']}
+			return Response(filtered)
+		except AppUser.DoesNotExist:
+			return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+		except Exception as e:
+			error(e)
+			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class AppUserPicture(APIView):
 	def post(self, request, format=None):
 		user = request.app_user

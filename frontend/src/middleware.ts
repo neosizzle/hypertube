@@ -3,7 +3,8 @@ import { NextRequest } from "next/server";
 
 export const config = {
   matcher: [
-    '/account'
+    '/account',
+    '/users/:path*'
   ]
 }
 
