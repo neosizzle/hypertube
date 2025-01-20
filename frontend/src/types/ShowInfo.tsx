@@ -71,6 +71,7 @@ export type MovieInfo = {
   revenue: number
   runtime: number
   status: string
+  imdb_rating: string
 }
 
 export type TVInfo = {
@@ -86,6 +87,8 @@ export type TVInfo = {
   number_of_seasons: number
   origin_country: string[]
   seasons: Season[]
+  imdb_id: string
+  imdb_rating: string
 }
 
 export type Cast = {

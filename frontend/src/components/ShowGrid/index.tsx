@@ -35,11 +35,12 @@ export default function ShowGrid({ data, handleClickShowCard }: ShowGridProps) {
 
     return (isFirstInRow(index) ? "left" : (isLastInRow(index) ? "right" : "center"))
   }
+
   return (
     <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 
       gap-x-2 gap-y-2 md:gap-y-16 lg:gap-y-20 justify-center lg:justify-start'>
       {
-        data.map((info, i) => (<ShowCard info={info} key={i} onClick={() => handleClickShowCard(info)} position={getCardPosition(i)}/>))
+        data?.map((info, i) => (<ShowCard info={info} key={i} onClick={() => handleClickShowCard(info)} position={getCardPosition(i)}/>))
       }
     </div>
   )

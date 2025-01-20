@@ -110,55 +110,52 @@ class CommentList(APIView):
 			return Response(serializer.data, status=status.HTTP_201_CREATED)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+TMDB_IMAGE_PATH = 'https://image.tmdb.org/t/p/original'
+TMDB_API_ENDPOINT = 'https://api.themoviedb.org/3'
+DEFAULT_POSTER_PATH = 'http://localhost:8000/media/thumbnail/default.png'
+OMDB_API_ENDPOINT = 'http://www.omdbapi.com/'
+
 class SearchExternalSource(APIView):
-    
-    TMDB_IMAGE_PATH = 'https://image.tmdb.org/t/p/original'
-    TMDB_API_ENDPOINT_TV = 'https://api.themoviedb.org/3/search/tv'
-    TMDB_API_ENDPOINT_MOVIE = 'https://api.themoviedb.org/3/search/movie'
-    DEFAULT_CHUNK_SIZE = 6
-    DEFAULT_POSTER_PATH = 'http://localhost:8000/media/thumbnail/default.png'
     
     def get(self, request, format=None):
         
         query = request.query_params.get('query')
-        chunk_size = request.query_params.get('chunk_size')
-        
-        if not chunk_size:
-            chunk_size = self.DEFAULT_CHUNK_SIZE
+        page = request.query_params.get('page', 1)
         
         if not query:
             return Response({"detail": "query must not be empty"}, status=status.HTTP_400_BAD_REQUEST)
         
         params = {
             'query': query,
-            'api_key': os.getenv('TMDB_KEY')
+            'api_key': os.getenv('TMDB_KEY'),
+            'page': page
         }
         
-        tv_response = requests.get(f'{self.TMDB_API_ENDPOINT_TV}?{urlencode(params)}')
-        movie_response = requests.get(f'{self.TMDB_API_ENDPOINT_MOVIE}?{urlencode(params)}')
+        tv_response = requests.get(f'{TMDB_API_ENDPOINT}/search/tv?{urlencode(params)}')
+        movie_response = requests.get(f'{TMDB_API_ENDPOINT}/search/movie?{urlencode(params)}')
         
-        tv_results = tv_response.json()['results']
-        movie_results = movie_response.json()['results']
-        
+        tv_data = tv_response.json()
+        movie_data = movie_response.json()
+
         results = []
         
-        for r in tv_results:
+        for r in tv_data['results']:
             
             results.append({
                 'title': r['name'],
                 'date': r.get('first_air_date', ''),
                 'type': 'tv',
-                'poster_path': self.TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else self.DEFAULT_POSTER_PATH,
+                'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
                 'id': r['id']
             })
         
-        for r in movie_results:
+        for r in movie_data['results']:
             
             results.append({
                 'title': r['title'],
                 'date': r.get('release_date', ''),
                 'type': 'movie',
-                'poster_path': self.TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else self.DEFAULT_POSTER_PATH,
+                'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
                 'id': r['id']
             })
 
@@ -166,13 +163,16 @@ class SearchExternalSource(APIView):
         
         results = filter(lambda x:  x.get('date') != '' and datetime.strptime(x.get('date'),'%Y-%m-%d') <= datetime.now(), results)
         
-        return Response(results, status=status.HTTP_200_OK)
+        payload = {}
+        
+        payload['results'] = results
+        payload['page'] = page
+        payload['total_pages'] = max(tv_data['total_pages'], movie_data['total_pages'])
+        payload['total_results'] = tv_data['total_results'] + movie_data['total_results']
+
+        return Response(payload, status=status.HTTP_200_OK)
 
 class TrendingShows(APIView):
-    
-    TMDB_IMAGE_PATH = 'https://image.tmdb.org/t/p/original'
-    TMDB_API_ENDPOINT = 'https://api.themoviedb.org/3'
-    DEFAULT_POSTER_PATH = 'http://localhost:8000/media/thumbnail/default.png'
 
     def get(self, request, format=None):
 
@@ -182,27 +182,23 @@ class TrendingShows(APIView):
             'api_key': os.getenv('TMDB_KEY')
         }
         
-        url = f'{self.TMDB_API_ENDPOINT}/{type}/popular?{urlencode(params)}'
+        url = f'{TMDB_API_ENDPOINT}/{type}/popular?{urlencode(params)}'
 
-        movie_response = requests.get(url)
+        response = requests.get(url)
         
-        results = movie_response.json()['results']
+        data = response.json()
         
         results = [{
             'title': r['title'] if type == 'movie' else r['name'],
             'date': r.get('release_date', ''),
             'type': type,
-            'poster_path': self.TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else self.DEFAULT_POSTER_PATH,
+            'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
             'id': r['id']
-        } for r in results]
+        } for r in data['results']]
 
         return Response(results, status=status.HTTP_200_OK)
 
 class ShowInfo(APIView):
-    
-    TMDB_IMAGE_PATH = 'https://image.tmdb.org/t/p/original'
-    TMDB_API_ENDPOINT = 'https://api.themoviedb.org/3'
-    DEFAULT_POSTER_PATH = 'http://localhost:8000/media/thumbnail/default.png'
     
     def get(self, request, format=None):
         
@@ -218,7 +214,7 @@ class ShowInfo(APIView):
             'append_to_response': 'credits'
         }
         
-        url = f'{self.TMDB_API_ENDPOINT}/{type}/{tmdb_id}?{urlencode(params)}'
+        url = f'{TMDB_API_ENDPOINT}/{type}/{tmdb_id}?{urlencode(params)}'
         response = requests.get(url)
         
         if response.status_code != 200:
@@ -246,10 +242,29 @@ class ShowInfo(APIView):
             'origin_country', 'seasons'
         )}
         
-        payload['poster_path'] = self.TMDB_IMAGE_PATH + payload['poster_path'] \
-            if payload.get('poster_path') else self.DEFAULT_POSTER_PATH
-        payload['backdrop_path'] = self.TMDB_IMAGE_PATH + payload['backdrop_path'] \
-            if payload.get('backdrop_path') else self.DEFAULT_POSTER_PATH
+        if type == 'tv':
+            
+            response = requests.get(
+                f'{TMDB_API_ENDPOINT}/{type}/{tmdb_id}/external_ids?{urlencode({
+                    'api_key': os.getenv('TMDB_KEY')
+                })}')
+            
+            data = response.json()
+            payload['details']['imdb_id'] = data.get('imdb_id', '')
+        
+        # on fail Response: False
+        omdb_response = requests.get(
+            f'{OMDB_API_ENDPOINT}?{urlencode({
+                'apikey': os.getenv('OMDB_KEY'),
+                'i': payload['details']['imdb_id']
+            })}')
+
+        payload['details']['imdb_rating'] = omdb_response.json().get('imdbRating', '')
+        
+        payload['poster_path'] = TMDB_IMAGE_PATH + payload['poster_path'] \
+            if payload.get('poster_path') else DEFAULT_POSTER_PATH
+        payload['backdrop_path'] = TMDB_IMAGE_PATH + payload['backdrop_path'] \
+            if payload.get('backdrop_path') else DEFAULT_POSTER_PATH
         
         
         payload['credits']['cast'] = [{k: v for k, v in cast.items()
@@ -264,14 +279,10 @@ class ShowInfo(APIView):
                                            'original_name', 'character',
                                            'name', 'department', 'job')}
                                       for crew in payload['credits']['crew']]
-        
+
         return Response(payload, status=status.HTTP_200_OK)
 
 class SeasonInfo(APIView):
-
-    TMDB_IMAGE_PATH = 'https://image.tmdb.org/t/p/original'
-    TMDB_API_ENDPOINT = 'https://api.themoviedb.org/3'
-    DEFAULT_POSTER_PATH = 'http://localhost:8000/media/thumbnail/default.png'
     
     def get(self, request, format=None):
         
@@ -284,7 +295,7 @@ class SeasonInfo(APIView):
 
         params = { 'api_key': os.getenv('TMDB_KEY') }
         
-        url = f'{self.TMDB_API_ENDPOINT}/tv/{tmdb_id}/season/{season_number}?{urlencode(params)}'
+        url = f'{TMDB_API_ENDPOINT}/tv/{tmdb_id}/season/{season_number}?{urlencode(params)}'
         response = requests.get(url)
         
         if response.status_code != 200:
@@ -302,8 +313,8 @@ class SeasonInfo(APIView):
                                for ep in data['episodes']]
 
         for i, ep in enumerate(payload['episodes']):
-            payload['episodes'][i]['still_path'] = self.TMDB_IMAGE_PATH + ep['still_path'] \
-                if ep.get('still_path') else self.DEFAULT_POSTER_PATH
+            payload['episodes'][i]['still_path'] = TMDB_IMAGE_PATH + ep['still_path'] \
+                if ep.get('still_path') else DEFAULT_POSTER_PATH
 
             payload['episodes'][i]['title'] = ep['name']
             del payload['episodes'][i]['name']
