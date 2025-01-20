@@ -3,38 +3,54 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { SearchContext } from "@/providers/SearchProvider";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import ShowInfoModal from "@/components/ShowInfoModal";
 import { FullInfo, ShortInfo } from "../../types/ShowInfo";
 import { useDebounce } from "@/hooks/useDebounce";
-import ShowCard from "@/components/ShowCard";
-import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { useInView } from "react-intersection-observer";
+import ShowGrid from "@/components/ShowGrid";
 
-type InfiniteScrollShowGridProps = {
-  query: string
-  handleClickShowCard: (data: ShortInfo) => void
-}
+const parseDate = (dateString: string) => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day); // month is 0-indexed
+};
 
-export function InfiniteScrollSearchResults({ query, handleClickShowCard }: InfiniteScrollShowGridProps) {
 
-  const { isSm } = useBreakpoint("sm")
-  const { isMd } = useBreakpoint("md")
-  const { isLg } = useBreakpoint("lg")
-  const { isXl } = useBreakpoint("xl")
-  const { is2xl } = useBreakpoint("2xl")
+export default function Search() {
+  
+  // search
+  const { searchQuery, setSearchQuery } = useContext(SearchContext);
 
+  // modal & content
+  const [openModal, setOpenModal] = useState(false)
+  const [showInfo, setShowInfo] = useState<FullInfo | null>(null)
+
+  // debounce
+  const [debounceQuery, setDebounceQuery] = useState('')
+  const debounce = useDebounce(searchQuery, 2000)
+  
+  // infinite scroll
   const [scrollTrigger, isInView] = useInView();
-  const [results, setResults] = useState<ShortInfo[]>([])
   const [hasMoreData, setHasMoreData] = useState(true)
   const [nextPage, setNextPage] = useState(2)
+  
+  const [results, setResults] = useState<ShortInfo[]>([])
+  const [filterOption, setFilterOption] = useState('none')
+  const [fromYear, setFromYear] = useState<Date>(new Date(0))
+  const [toYear, setToYear] = useState<Date>(new Date())
+  const [filterType, setFilterType] = useState('all')
+  const [filteredResults, setFilteredResults] = useState(results)
+  
+  // debounce search query
+  useEffect(() => setDebounceQuery(searchQuery), [debounce])
 
+  // search api call
   useEffect(() => {
     
-    if (query === '') return
+    if (debounceQuery === '') return
 
-    fetch(`http://localhost:8000/api/show/search?query=${encodeURIComponent(query)}&page=1`, {
+    fetch(`http://localhost:8000/api/show/search?query=${encodeURIComponent(debounceQuery)}&page=1`, {
       method: 'GET',
     }).then((data) => {
       if (data.ok) data.json().then((json) => setResults(json.results))
@@ -42,34 +58,14 @@ export function InfiniteScrollSearchResults({ query, handleClickShowCard }: Infi
 
     setHasMoreData(true);
     setNextPage(2);
-  }, [query]);
+  }, [debounceQuery]);
 
-  const getCardPosition = (index: number) => {
-
-    const isFirstInRow = (index: number) => {
-      if (is2xl) return (index % 6 == 0)
-      if (isXl) return (index % 5 == 0)
-      if (isLg) return (index % 4 == 0)
-      if (isMd) return (index % 3 == 0)
-      if (isSm) return (index % 2 == 0)
-    }
-
-    const isLastInRow = (index: number) => {
-      if (is2xl) return (index % 6 == 5)
-      if (isXl) return (index % 5 == 4)
-      if (isLg) return (index % 4 == 3)
-      if (isMd) return (index % 3 == 2)
-      if (isSm) return (index % 2 == 1)
-    }
-
-    return (isFirstInRow(index) ? "left" : (isLastInRow(index) ? "right" : "center"))
-  }
-
+  // next results page call
   const load = () => {
 
     if (!hasMoreData) return
 
-    fetch(`http://localhost:8000/api/show/search?query=${encodeURIComponent(query)}&page=${nextPage}`, {
+    fetch(`http://localhost:8000/api/show/search?query=${encodeURIComponent(debounceQuery)}&page=${nextPage}`, {
       method: 'GET',
     }).then((data) => {
       if (data.ok) data.json().then((json) => {
@@ -80,39 +76,12 @@ export function InfiniteScrollSearchResults({ query, handleClickShowCard }: Infi
     }).catch((error) => console.error(error))
   }
 
+  // load more results for infinite scrolling
   useEffect(() => {
     if (isInView && hasMoreData) {
       load();
     }
   }, [isInView, hasMoreData]);
-
-  return (
-    <>
-      <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 
-        gap-x-2 gap-y-2 md:gap-y-16 lg:gap-y-20 justify-center lg:justify-start'>
-        {
-          results?.map((info, i) => (<ShowCard info={info} key={i} onClick={() => handleClickShowCard(info)} position={getCardPosition(i)}/>))
-        }
-      </div>
-      <div>
-        {(hasMoreData && <div ref={scrollTrigger}>Loading...</div>) || (
-          <p>No more posts to load</p>
-        )}
-      </div>
-    </>
-  )
-}
-
-export default function Search() {
-
-  const { searchQuery, setSearchQuery } = useContext(SearchContext);
-  const [openModal, setOpenModal] = useState(false)
-  const [showInfo, setShowInfo] = useState<FullInfo | null>(null)
-
-
-  const [debounceQuery, setDebounceQuery] = useState('')
-  const debounce = useDebounce(searchQuery, 2000)
-  useEffect(() => setDebounceQuery(searchQuery), [debounce])
 
   const handleClickShowCard = (data: ShortInfo) => {
     fetch(`http://localhost:8000/api/show/info?id=${data.id}&type=${data.type}`, {
@@ -125,12 +94,63 @@ export default function Search() {
     }).catch((error) => console.error(error))
   }
 
+  useEffect(() => {
+
+    if (filterOption === 'year') {
+      setFilteredResults(results.filter((data) => parseDate(data.date) >= fromYear && parseDate(data.date) <= toYear))
+    } else if (filterOption === 'type') {
+      setFilteredResults(filterType === 'all' ? results : results.filter((data) => data.type === filterType))
+    } else {
+      setFilteredResults(results)
+    }
+  
+  }, [results, fromYear, toYear, filterOption, filterType])
+
   return (
     <div className="h-screen w-full overflow-x-hidden bg-white flex flex-col justify-between">
       <Header />
       <div className="h-auto w-full flex flex-col justify-center py-10 px-10 lg:px-16 mb-auto space-y-8">
-        <div className="text-black text-sm lg:text-4xl font-medium pt-12">Search results for: "{searchQuery}"</div>
-        <InfiniteScrollSearchResults query={debounceQuery} handleClickShowCard={handleClickShowCard}/>
+        <div className="flex flex-col md:flex-row justify-between md:pt-12 space-y-4 md:space-y-0">
+          <div className="text-black text-md md:text-lg lg:text-4xl font-medium">Search results for: "{searchQuery}"</div>
+          <div className="flex flex-row text-xs md:text-md lg:text-lg items-center space-x-4">
+            <div className="text-black ">Filter by: </div>
+            <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
+            onChange={(e) => setFilterOption(e.target.value)}>
+              <option key={1} value='none'>None</option>
+              <option key={2} value='type'>Type</option>
+              <option key={3} value='year'>Year</option>
+            </select>
+            {
+              filterOption === 'year' &&
+              <div className="flex flex-row text-black space-x-4 justify-center items-center">
+                <div className="flex w-20 h-10 rounded-md border-2 border-black p-2 space-x-2 justify-center items-center">
+                  <input placeholder="From"
+                  className="w-full outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
+                  type="number" onInput={(e) => setFromYear((e.target as HTMLInputElement).value === '' ? new Date() : new Date(Number((e.target as HTMLInputElement).value), 0, 1))}/>
+                </div>
+                <div className="text-black font-bold text-2xl">-</div>
+                <div className="flex w-20 h-10 rounded-md border-2 border-black p-2 space-x-2 justify-center items-center">
+                  <input placeholder="To"
+                  className="w-full outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
+                  type="number" onInput={(e) => setToYear((e.target as HTMLInputElement).value === '' ? new Date() : new Date(Number((e.target as HTMLInputElement).value), 11, 31))}/>
+                </div>
+              </div>
+            }
+            {
+              filterOption === 'type' &&
+              <div className="flex flex-row text-black space-x-4 justify-center items-center">
+                <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
+                onChange={(e) => setFilterType(e.target.value)}>
+                  <option key={1} value='all'>All</option>
+                  <option key={2} value='movie'>Movie</option>
+                  <option key={3} value='tv'>TV Series</option>
+                </select>
+              </div>
+            }
+          </div>
+        </div>
+        <ShowGrid data={filteredResults} handleClickShowCard={handleClickShowCard}/>
+        <div ref={scrollTrigger}/>
       </div>
       <ShowInfoModal open={openModal} onClose={() => setOpenModal(false)} info={showInfo}/>
       <Footer />
