@@ -3,7 +3,7 @@ from video.models import Video, Comment, Torrent
 
 # Register your models here.
 class VideoAdmin(admin.ModelAdmin):
-  list_display = ("id", "name", "thumbnail")
+  list_display = ("id", "name")
 
 admin.site.register(Video, VideoAdmin)
 
