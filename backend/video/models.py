@@ -7,16 +7,8 @@ class Torrent(models.Model):
 
 class Video(models.Model):
 	torrent = models.ForeignKey(Torrent, on_delete=models.CASCADE, related_name='torrent')
-	airing_date = models.DateField(null=True)
 	name = models.CharField(max_length=100, unique=True)
-	rating = models.SmallIntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)], null=True) # rating scale to 100 -> should be the average from all sources
-	genre = models.CharField(max_length=100, default="")
-	summary = models.CharField(max_length=1024, default="")
-	casting = models.CharField(max_length=100, default="")
-	director = models.CharField(max_length=100, default="")
-	producer = models.CharField(max_length=100, default="")
 	subtitle = models.FileField(upload_to='subtitles/', null=True, blank=True, default='subtitles/default.png')
-	thumbnail = models.ImageField(upload_to='thumbnail/', null=True, blank=True, default='thumbnail/default.png')
 	watched_by = models.ManyToManyField(AppUser, blank=True, related_name='watched_videos') # why is this not in users model? to prevent circular import since user model imports this model
 
 class Comment(models.Model):

@@ -28,10 +28,10 @@ To install and set up Python 3.11.1 (or compatible) using **Conda**, follow thes
 2. **Create a new Conda environment** with Python 3.11.1:
 
     ```bash
-    conda create -n env python=3.11.1
+    conda create -n hypertube python=3.11.1
     ```
 
-    Replace `env` with the name you wish to give to your environment.
+    Replace `hypertube` with the name you wish to give to your environment.
 
 3. **Activate the environment**:
 
