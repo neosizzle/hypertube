@@ -21,6 +21,7 @@ class AppUser(models.Model):
 	discord_iden = models.CharField(max_length=100, default="")
 	github_iden = models.CharField(max_length=100, default="")
 	profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True, default='profile_pics/default.png')
+	lang = models.CharField(max_length=2, default="en")
 
 	class Meta:
 		ordering = ['created']

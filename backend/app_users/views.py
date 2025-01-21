@@ -223,7 +223,9 @@ class AuthLogin(APIView):
 			user = self.oauth_token_exchange(method, code, redirect_uri)
 			session = Session.create_session_for_user(user.get('id'))
 			data = user
-			data.update({"token": session.token})
+			
+			# dont send token to frontend, unsafe
+			# data.update({"token": session.token})
 			
 			response = Response(data)
 			response.set_cookie('token', session.token, httponly=True, samesite='Strict')

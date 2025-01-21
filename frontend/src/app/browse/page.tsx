@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ShowCard from "@/components/ShowCard";
 import { FullInfo, ShortInfo } from "../../types/ShowInfo";
 import ShowInfoModal from "@/components/ShowInfoModal";
 import ShowGrid from "@/components/ShowGrid";
+import { useTranslations } from "next-intl";
 
 export default function Browse() {
+
+  const t = useTranslations('BrowsePage')
 
   const [trending, setTrending] = useState<ShortInfo[]>([])
   const [openModal, setOpenModal] = useState(false)
@@ -48,7 +50,7 @@ export default function Browse() {
     <div className="h-auto w-full bg-white flex flex-col justify-between">
       <Header />
       <div className="h-auto flex flex-col justify-center py-10 px-10 lg:px-16 mb-auto space-y-8">
-        <div className="font-bold text-2xl text-black py-4 text-center lg:text-center px-4">Popular Shows</div>
+        <div className="font-bold text-2xl text-black py-4 text-center lg:text-center px-4">{t('popularShows')}</div>
         <ShowGrid data={trending} handleClickShowCard={handleClickShowCard} />
       </div>
       <ShowInfoModal open={openModal} onClose={() => setOpenModal(false)} info={showInfo}/>

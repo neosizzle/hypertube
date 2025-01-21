@@ -1,0 +1,55 @@
+{
+	"Locales": {
+		"en": "English",
+		"ms": "Bahasa Melayu"
+	},
+
+	"LoginPage": {
+		"username": "Nama Akaun",
+		"password": "Kata Laluan",
+		"incorrectUserNameOrPassword": "Nama akaun atau kata laluan yang salah.",
+		"register": "Daftar Akaun Baharu",
+		"resetPassword": "Set Semula Kata Laluan",
+		"welcomeBack": "Selamat Kembali!",
+		"or": "atau",
+		"continueWith": "Daftar dengan",
+		"logIn": "Daftar Masuk"
+	},
+
+	"AccountPage": {
+		"account": "Akaun",
+		"profileDetails": "Butir-butir Profil",
+		"username": "Nama Akaun",
+		"email": "Email",
+		"firstName": "Nama Pertama",
+		"lastName": "Nama Keluarga",
+		"success": "Berjaya!",
+		"updateProfile": "Kemas Kini Profil",
+		"profilePicture": "Gambar Profil",
+		"edit": "Tukar",
+		"removePicture": "Padam Gambar",
+		"uploadNew": "Muat naik...",
+		"language": "Bahasa",
+		"passwordAndAuthentication": "Kata Laluan dan Pengesahan",
+		"resetPassword": "Set Semula Kata Laluan",
+		"accountSettings": "Tetapan Akaun",
+		"deleteAccount": "Padam Akaun"
+	},
+
+	"BrowsePage": {
+		"popularShows": "Filem Terkenal"
+	},
+
+	"Header": {
+		"home": "Utama",
+		"logOut": "Daftar Keluar",
+		"account": "Akaun",
+		"search": "Cari",
+		"logIn": "Daftar Masuk"
+	},
+
+	"ShowCard": {
+		"movie": "Filem",
+		"tv": "Siri TV"
+	}
+}

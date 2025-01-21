@@ -1,0 +1,55 @@
+{
+	"Locales": {
+		"en": "English",
+		"ms": "Bahasa Melayu"
+	},
+
+	"LoginPage": {
+		"logIn": "Log In",
+		"register": "Register",
+		"resetPassword": "Reset Password",
+		"welcomeBack": "Welcome back!",
+		"username": "Username",
+		"password": "Password",
+		"incorrectUserNameOrPassword": "Incorrect username or password.",
+		"or": "or",
+		"continueWith": "Continue With"
+	},
+
+	"AccountPage": {
+		"account": "Account",
+		"profileDetails": "Profile Details",
+		"username": "Username",
+		"email": "Email",
+		"firstName": "First Name",
+		"lastName": "Last Name",
+		"success": "Success!",
+		"updateProfile": "Update Profile",
+		"profilePicture": "Profile Picture",
+		"edit": "Edit",
+		"removePicture": "Remove Picture",
+		"uploadNew": "Upload new...",
+		"language": "Language",
+		"passwordAndAuthentication": "Password and Authentication",
+		"resetPassword": "Reset Password",
+		"accountSettings": "Account Settings",
+		"deleteAccount": "Delete Account"
+	},
+
+	"BrowsePage": {
+		"popularShows": "Popular Shows"
+	},
+
+	"Header": {
+		"home": "Home",
+		"logOut": "Log Out",
+		"account": "Account",
+		"search": "Search",
+		"logIn": "Log In"
+	},
+
+	"ShowCard": {
+		"movie": "Movie",
+		"tv": "TV Series"
+	}
+}

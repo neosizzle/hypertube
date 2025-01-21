@@ -3,8 +3,12 @@
 import { redirect, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState, useTransition } from "react"
 import { motion } from "motion/react"
+
+import { useLocale, useTranslations } from 'next-intl'
+import { locales } from "@/i18n/config"
+import { setUserLocale } from "@/services/locale"
 
 const enter = {
   opacity: 1,
@@ -21,6 +25,8 @@ const exit = {
 }
 
 function SignInForm({ onSuccess }: { onSuccess: () => void }) {
+
+  const t  = useTranslations('LoginPage');
 
   const [signInFailed, setSignInFailed] = useState(false)
   const un_ref = useRef<HTMLInputElement>(null)
@@ -65,33 +71,33 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <>
-      <div className="text-black text-2xl lg:text-4xl font-semibold lg:pb-3">Welcome back!</div>
+      <div className="text-black text-2xl lg:text-4xl font-semibold lg:pb-3">{t('welcomeBack')}</div>
         <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base"
-        placeholder="Username" ref={un_ref}
+        placeholder={t('username')} ref={un_ref}
         initial={exit}
         animate={enter}
         />
         <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base"
-        placeholder="Password" ref={pw_ref}
+        placeholder={t('password')} ref={pw_ref}
         initial={exit}
         animate={enter}
         />
         {signInFailed && <motion.div className="flex justify-center items-center text-red-500 text-[0.6rem] lg:text-sm"
         initial={exit}
         animate={enter}
-        >
-          Incorrect username or password.
-        </motion.div>}
+        >{t('incorrectUsernameOrPassword')}</motion.div>}
         <motion.button className="h-8 lg:h-12 bg-purple-400 rounded-lg p-1 font-bold font-white text-sm lg:text-lg
         hover:scale-105 hover:drop-shadow-sm transition-all" onClick={handleSignIn}
         initial={exit}
         animate={enter}
-        >Sign In</motion.button>
+        >{t('logIn')}</motion.button>
     </>
   )
 }
 
 function OAuthButton({ provider, icon_src }: { provider: string, icon_src: string }) {
+
+  const t = useTranslations('LoginPage')
 
   return (
     <motion.button
@@ -101,12 +107,14 @@ function OAuthButton({ provider, icon_src }: { provider: string, icon_src: strin
       animate={enter}
       >
       <Image className="w-5 h-auto lg:w-8" src={icon_src} alt={provider} width={20} height={64}/>
-      <div className="text-black text-xs lg:text-base">Continue with {provider.charAt(0).toUpperCase() + provider.slice(1)}</div>
+      <div className="text-black text-xs lg:text-base">{t('continueWith') + ' ' + provider.charAt(0).toUpperCase() + provider.slice(1)}</div>
     </motion.button>
   )
 }
 
 function SignInCard({ onSuccess }: { onSuccess: () => void }) {
+
+  const t = useTranslations('LoginPage')
   
   return (
     <div className="flex flex-col w-3/4 md:w-1/2 lg:w-2/5 xl:w-1/4 h-[29rem] lg:h-[40rem] bg-gradient-to-br from-purple-200 to-[#9EFCFF]
@@ -114,7 +122,7 @@ function SignInCard({ onSuccess }: { onSuccess: () => void }) {
       <SignInForm onSuccess={onSuccess} />
       <div className="flex flex-row space-x-2 justify-center items-center">
         <hr className="flex-grow border-black"/>
-        <div className="text-black text-sm lg:text-lg font-semibold">or</div>
+        <div className="text-black text-sm lg:text-lg font-semibold">{t('or')}</div>
         <hr className="flex-grow border-black"/>
       </div>
       <div className="flex flex-col space-y-4">
@@ -123,9 +131,9 @@ function SignInCard({ onSuccess }: { onSuccess: () => void }) {
         <OAuthButton provider="github" icon_src="/github.svg" />
       </div>
       <div className="flex flex-row text-black text-[0.6rem] lg:text-xs space-x-2 items-center justify-center">
-        <Link href="/register" className="text-blue-500 underline cursor-pointer">Register</Link>
-        <div>or</div>
-        <Link href="/reset" className="text-blue-500 underline cursor-pointer">Reset Password</Link>
+        <Link href="/register" className="text-blue-500 underline cursor-pointer">{t('register')}</Link>
+        <div>{t('or')}</div>
+        <Link href="/reset" className="text-blue-500 underline cursor-pointer">{t('resetPassword')}</Link>
       </div>
     </div>
   )
@@ -135,6 +143,14 @@ export default function Login() {
 
   const [success, setSuccess] = useState(false)
   const router = useRouter()
+  const t = useTranslations('Locales')
+  
+  const [isPending, startTransition] = useTransition()
+
+  const changeLang = async (locale: string) => {
+    setUserLocale(locale)
+    console.log("Change lang to : " + locale)
+  }
 
   // callback code exchange
   useEffect(() => {
@@ -167,6 +183,7 @@ export default function Login() {
         data.json().then((json) => {
           console.log(JSON.stringify(json))
           localStorage.setItem('userID', json.id)
+          changeLang(json.lang)
         })
       }
     })
@@ -181,6 +198,13 @@ export default function Login() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-white items-center justify-center space-y-4">
+      <select className="absolute my-2 mx-8 top-0 right-0 w-48 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+      items-center px-2 bg-transparent hover:bg-black/10 outline-none"
+      onChange={(e) => startTransition(() => changeLang(e.target.value))}>
+        {
+          locales.map((locale, i) =>  (<option key={i} value={locale}>{t(locale)}</option>))
+        }
+      </select>
       <div className="font-bold text-black text-base lg:text-2xl">hypertube</div>
       <SignInCard onSuccess={() => setSuccess(true)}/>
     </div>

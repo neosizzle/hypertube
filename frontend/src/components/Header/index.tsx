@@ -6,11 +6,13 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation";
 import { SearchContext } from "@/providers/SearchProvider";
+import { useTranslations } from "next-intl";
 
 function Search() {
 
   const router = useRouter()
   const pathname = usePathname()
+  const t = useTranslations('Header')
   
   const { searchQuery, setSearchQuery, isOpen, setIsOpen } = useContext(SearchContext);
   
@@ -102,7 +104,7 @@ function Search() {
         }}
       className="flex w-full h-10 rounded-md border-2 border-black p-2 space-x-2 justify-center items-center">
         <Image priority src="/search.svg" alt="search" width={25} height={25} className="w-6 h-6 hidden lg:block"/>
-        <input placeholder="Search" className="w-full outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
+        <input placeholder={t('search')} className="w-full outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
         onInput={(e) => setSearchQuery((e.target as HTMLInputElement).value)} value={searchQuery} ref={inputRef}/>
         <Image priority src="/close.svg" alt="search" width={25} height={25} className="w-6 h-6" onClick={() => setSearchQuery('')}/>
       </motion.div>
@@ -115,6 +117,7 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
   const [isHover, setIsHover] = useState(false)
   const toggleHover = () => {setIsHover(!isHover)}
   const router = useRouter()
+  const t = useTranslations('Header')
 
   const enter = {
     opacity: 1,
@@ -159,11 +162,11 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
           initial={exit}
           animate={isHover ? enter : exit}
           className="absolute top-16 right-0 bg-white rounded-lg text-black z-10">
-            {isLoggedIn ? <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
-              <li className="hover:text-gray-500"><Link href="/account">Account</Link></li>
-              <li className="hover:text-gray-500"><button onClick={handleLogOut}>Log Out</button></li>
+            {isLoggedIn ? <ul className="p-4 space-y-4 border-2 rounded-lg w-48">
+              <li className="hover:text-gray-500"><Link href="/account">{t('account')}</Link></li>
+              <li className="hover:text-gray-500"><button onClick={handleLogOut}>{t('logOut')}</button></li>
             </ul> : <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
-              <li className="hover:text-gray-500"><Link href="/login">Log In</Link></li>
+              <li className="hover:text-gray-500"><Link href="/login">{t('logIn')}</Link></li>
             </ul>}
         </motion.div>
       </motion.div>
@@ -177,6 +180,7 @@ export default function Header() {
   const { searchQuery, setSearchQuery, isOpen, setIsOpen } = useContext(SearchContext);
   const [profilePicURL, setProfilePicURL] = useState('http://localhost:8000/media/profile_pics/default.png')
   const [login, setLogin] = useState(true)
+  const t = useTranslations('Header')
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/users/me`, {
@@ -205,7 +209,7 @@ export default function Header() {
           </div>
           <div className="flex flex-row">
             <Image src={'/home.svg'} alt="logo" width={25} height={25} className="w-6 inline-block lg:hidden" onClick={handleClick('/browse')}/>
-            <button className="font-bold hidden lg:inline-block" onClick={handleClick('/browse')}>Home</button>
+            <button className="font-bold hidden lg:inline-block" onClick={handleClick('/browse')}>{t('home')}</button>
           </div>
         </div>
         <div className="flex flex-row items-center justify-center space-x-4">

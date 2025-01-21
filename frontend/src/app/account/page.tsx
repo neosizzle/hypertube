@@ -8,6 +8,10 @@ import Image from "next/image"
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { locales } from "../../i18n/config"
+import { useTranslations } from "next-intl";
+import { setUserLocale } from "@/services/locale";
+
 const enter = {
   opacity: 1,
   transition: {
@@ -100,6 +104,9 @@ function DeleteAccountConfirmationModal({ open, onClose }: { open: boolean, onCl
 }
 
 export default function Account() {
+
+  const locale_t = useTranslations('Locales')
+  const t = useTranslations('AccountPage')
 
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
@@ -208,36 +215,54 @@ export default function Account() {
     })
   }
 
+  const changeLanguage = (newLocale: string) => {
+
+    fetch('http://localhost:8000/api/users/me', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        lang: newLocale
+      })
+    }).then((resp) => {
+      if (resp.ok) setUserLocale(newLocale)
+    }).catch((error) => {
+      console.error(error);
+    })
+  }
+
   return (
     <div className="h-auto w-full bg-white flex flex-col justify-between">
       <Header />
       <div className="flex flex-col justify-center py-10 px-8 lg:px-16 grow mb-auto space-y-4">
-        <div className="text-black text-4xl bg-clip-text font-bold">Account</div>
+        <div className="text-black text-4xl bg-clip-text font-bold">{t('account')}</div>
         <hr className="w-full h-1 bg-gradient-to-r from-purple-200 to-[#9EFCFF] bg-clip-border my-4 rounded-md" />
         <div className="flex flex-col space-y-4">
-          <div className="text-black text-xl font-medium px-2 lg:px-0">Profile Details</div>
+          <div className="text-black text-xl font-medium px-2 lg:px-0">{t('profileDetails')}</div>
           <div className="flex flex-col md:flex-row items-center lg:items-start lg:justify-start md:space-x-8">
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-1">
-                <div className="text-black font-bold">Username</div>
+                <div className="text-black font-bold">{t('username')}</div>
                 <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={username} onInput={(e) => setUsername(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
-                <div className="text-black font-bold">Email</div>
+                <div className="text-black font-bold">{t('email')}</div>
                 <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={email} onInput={(e) => setEmail(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
-                <div className="text-black font-bold">First Name</div>
+                <div className="text-black font-bold">{t('firstName')}</div>
                 <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={firstName} onInput={(e) => setFirstName(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
-                <div className="text-black font-bold">Last Name</div>
+                <div className="text-black font-bold">{t('lastName')}</div>
                 <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={lastName} onInput={(e) => setLastName(e.currentTarget.value)}/>
@@ -249,36 +274,46 @@ export default function Account() {
               </motion.div>}
               <button className={`w-72 lg:w-48 h-8 lg:h-10 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
               hover:scale-105 hover:drop-shadow-sm transition-all ${updateSuccess ?'bg-green-400 text-black' : 'bg-purple-400'}`}
-              onClick={updateProfile}>{updateSuccess ? 'Success!' : 'Update Profile'}</button>
+              onClick={updateProfile}>{updateSuccess ? t('success') : t('updateProfile')}</button>
             </div>
             <div className="flex flex-col relative space-y-5 p-5 md:p-0 items-center">
-              <div className="text-black font-bold justify-start">Profile Picture</div>
+              <div className="text-black font-bold justify-start">{t('profilePicture')}</div>
               <Image src={`http://localhost:8000${profilePicURL}`} alt="profile picture" width={150} height={150} 
               className="rounded-full w-32 h-32"/>
               <button className="w-16 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
-              hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => setEdit(!isEdit)}>Edit</button>
+              hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => setEdit(!isEdit)}>{t('edit')}</button>
               <motion.div
                 initial={exit}
                 animate={isEdit ? enter : exit}
                 className="absolute top-56 bg-white rounded-lg text-black z-10">
                   <ul className="p-4 space-y-4 border-2 rounded-lg w-44">
-                    <li className="hover:text-gray-500 cursor-pointer" onClick={deleteImage}>Remove Picture</li>
-                    <li className="hover:text-gray-500 cursor-pointer" onClick={uploadImage}>Upload new...</li>
+                    <li className="hover:text-gray-500 cursor-pointer" onClick={deleteImage}>{t('removePicture')}</li>
+                    <li className="hover:text-gray-500 cursor-pointer" onClick={uploadImage}>{t('uploadNew')}</li>
                   </ul>
               </motion.div>
             </div>
           </div>
         </div>
         <div className="flex flex-col space-y-4 px-2 lg:px-0">
-          {/* TODO: change button based on auth method*/}
-          <div className="text-black text-xl font-medium">Password and Authentication</div>
-          <button className="w-48 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
-                  hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {router.push('/reset')}}>Reset Password</button>
+          <div className="text-black text-xl font-medium">{t('language')}</div>
+          <select className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+          border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none"
+          onChange={(e) => changeLanguage(e.target.value)}>
+            {
+              locales.map((locale, i) =>  (<option key={i} value={locale}>{locale_t(locale)}</option>))
+            }
+          </select>
         </div>
         <div className="flex flex-col space-y-4 px-2 lg:px-0">
-          <div className="text-black text-xl font-medium">Account Settings</div>
+          {/* TODO: change button based on auth method*/}
+          <div className="text-black text-xl font-medium">{t('passwordAndAuthentication')}</div>
+          <button className="w-fit px-5 h-8 lg:h-10 bg-purple-400 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
+                  hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {router.push('/reset')}}>{t('resetPassword')}</button>
+        </div>
+        <div className="flex flex-col space-y-4 px-2 lg:px-0">
+          <div className="text-black text-xl font-medium">{t('accountSettings')}</div>
           <button className="w-48 h-8 lg:h-10 bg-red-500 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
-                  hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {setIsOpen(true)}}>Delete Account</button>
+                  hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {setIsOpen(true)}}>{t('deleteAccount')}</button>
         </div>
       </div>
       <DeleteAccountConfirmationModal open={isOpen} onClose={() => setIsOpen(false)} />

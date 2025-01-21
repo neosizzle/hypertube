@@ -18,6 +18,7 @@ class AppUserSerializer(serializers.Serializer):
 	github_iden = serializers.CharField(required=False, max_length=100)
 	profile_picture = serializers.ImageField(required=False, allow_null=True, default='profile_pics/default.png')
 	watched_videos = VideoSerializer(many=True, read_only=True)
+	lang = serializers.CharField(required=False, max_length=2)
 
 	def to_representation(self, instance):
 		representation = super().to_representation(instance)
@@ -42,7 +43,8 @@ class AppUserSerializer(serializers.Serializer):
 		instance.last_name = validated_data.get('last_name', instance.last_name)
 		instance.email = validated_data.get('email', instance.email)
 		instance.password = validated_data.get('password', instance.password)
-		instance.watched_videos = validated_data.get('watched_videos', instance.watched_videos)
+		instance.watched_videos.set(validated_data.get('watched_videos', instance.watched_videos.all()))
+		instance.lang = validated_data.get('lang', instance.lang)
 
 		instance.save()
 		return instance

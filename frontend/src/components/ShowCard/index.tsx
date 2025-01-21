@@ -1,9 +1,12 @@
-import { motion, AnimatePresence } from "motion/react"
-import { useState, useEffect, useRef } from "react"
+import { motion } from "motion/react"
+import { useState } from "react"
 import Image from "next/image"
 import { ShortInfo } from "../../types/ShowInfo"
+import { useTranslations } from "next-intl"
 
 function CardInfoExtension({ info } : { info: ShortInfo }) {
+
+  const t = useTranslations('ShowCard')
 
   return (
     <motion.div
@@ -15,7 +18,7 @@ function CardInfoExtension({ info } : { info: ShortInfo }) {
         px-3">
       <div className="flex flex-row w-full h-full items-center justify-between">
         <div className="flex flex-row space-x-2 justify-center items-center">
-          <div className="font-medium text-xs text-black">{info.type.charAt(0).toUpperCase() + info.type.slice(1)}</div>
+          <div className="font-medium text-xs text-black">{t(info.type)}</div>
           <Image src={"/dot.svg"} alt="dot" width={3} height={3} />
           <div className="font-medium text-xs text-black">{new Date(info.date).getFullYear()}</div>
         </div>
