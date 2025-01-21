@@ -4,7 +4,7 @@
 ## Requirements
 
 - **Node.js**: v20.10.0 or compatible
-- **Python**: v3.11.1 or compatible
+- **Python**: v3.10 or compatible
 
 ## Environment
 ### Node.js Installation
@@ -25,10 +25,10 @@ To install and set up Python 3.11.1 (or compatible) using **Conda**, follow thes
 
 1. **Install Conda**: If you don't have Conda installed, you can install it by downloading the [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/products/distribution) distribution, which includes Conda.
 
-2. **Create a new Conda environment** with Python 3.11.1:
+2. **Create a new Conda environment** with Python 3.10:
 
     ```bash
-    conda create -n hypertube python=3.11.1
+    conda create -n hypertube python=3.10
     ```
 
     Replace `hypertube` with the name you wish to give to your environment.
@@ -36,7 +36,7 @@ To install and set up Python 3.11.1 (or compatible) using **Conda**, follow thes
 3. **Activate the environment**:
 
     ```bash
-    conda activate env
+    conda activate hypertube
     ```
 
 4. To confirm that the correct version of Python is installed, run:
@@ -45,7 +45,7 @@ To install and set up Python 3.11.1 (or compatible) using **Conda**, follow thes
     python --version
     ```
 
-    This should display Python 3.11.1 (or a compatible version, depending on what you installed).
+    This should display Python 3.10 (or a compatible version, depending on what you installed).
 
 ## Instructions
 ### 1. Credentials setup
