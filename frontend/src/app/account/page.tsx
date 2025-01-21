@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { locales } from "../../i18n/config"
 import { useTranslations } from "next-intl";
 import { setUserLocale } from "@/services/locale";
+import LocaleSelector from "@/components/LocaleSelector";
 
 const enter = {
   opacity: 1,
@@ -106,6 +107,7 @@ function DeleteAccountConfirmationModal({ open, onClose }: { open: boolean, onCl
 export default function Account() {
 
   const locale_t = useTranslations('Locales')
+  const c = useTranslations('Common')
   const t = useTranslations('AccountPage')
 
   const [email, setEmail] = useState('')
@@ -244,25 +246,25 @@ export default function Account() {
           <div className="flex flex-col md:flex-row items-center lg:items-start lg:justify-start md:space-x-8">
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-1">
-                <div className="text-black font-bold">{t('username')}</div>
+                <div className="text-black font-bold">{c('username')}</div>
                 <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={username} onInput={(e) => setUsername(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
-                <div className="text-black font-bold">{t('email')}</div>
+                <div className="text-black font-bold">{c('email')}</div>
                 <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={email} onInput={(e) => setEmail(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
-                <div className="text-black font-bold">{t('firstName')}</div>
+                <div className="text-black font-bold">{c('firstName')}</div>
                 <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={firstName} onInput={(e) => setFirstName(e.currentTarget.value)}/>
               </div>
               <div className="space-y-1">
-                <div className="text-black font-bold">{t('lastName')}</div>
+                <div className="text-black font-bold">{c('lastName')}</div>
                 <input className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2
                 text-black text-xs lg:text-base border border-slate-400"
                 defaultValue={lastName} onInput={(e) => setLastName(e.currentTarget.value)}/>
@@ -296,13 +298,8 @@ export default function Account() {
         </div>
         <div className="flex flex-col space-y-4 px-2 lg:px-0">
           <div className="text-black text-xl font-medium">{t('language')}</div>
-          <select className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
-          border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none"
-          onChange={(e) => changeLanguage(e.target.value)}>
-            {
-              locales.map((locale, i) =>  (<option key={i} value={locale}>{locale_t(locale)}</option>))
-            }
-          </select>
+          <LocaleSelector className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+          border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none" />
         </div>
         <div className="flex flex-col space-y-4 px-2 lg:px-0">
           {/* TODO: change button based on auth method*/}

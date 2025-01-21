@@ -4,25 +4,38 @@
 		"ms": "Bahasa Melayu"
 	},
 
-	"LoginPage": {
+	"Common": {
+		"logIn": "Daftar Masuk",
+		"register": "Daftar Akaun Baharu",
+		"or": "atau",
+		"resetPassword": "Set Semula Kata Laluan",
 		"username": "Nama Akaun",
 		"password": "Kata Laluan",
-		"incorrectUserNameOrPassword": "Nama akaun atau kata laluan yang salah.",
-		"register": "Daftar Akaun Baharu",
-		"resetPassword": "Set Semula Kata Laluan",
+		"email": "E-mel",
+		"firstName": "Nama Pertama",
+		"lastName": "Nama Keluarga"
+	},
+
+	"LoginPage": {
+		"incorrectUsernameOrPassword": "Nama akaun atau kata laluan yang salah.",
 		"welcomeBack": "Selamat Kembali!",
-		"or": "atau",
-		"continueWith": "Daftar dengan",
-		"logIn": "Daftar Masuk"
+		"continueWith": "Daftar dengan"
+	},
+
+	"ResetPasswordPage": {
+		"instructions": "Masukkan alamat e-mel yang dikaitkan dengan akaun anda. Kod 6 angka akan dihantar seterusnya.",
+		"newPassword": "Kata Laluan baharu",
+		"code": "Kod 6 angka",
+		"sendCode": "Hantar Kod"
+	},
+
+	"ResetSuccessPage": {
+		"resetSuccessfulMsg": "Berjaya Tukar Kata Laluan"
 	},
 
 	"AccountPage": {
 		"account": "Akaun",
 		"profileDetails": "Butir-butir Profil",
-		"username": "Nama Akaun",
-		"email": "Email",
-		"firstName": "Nama Pertama",
-		"lastName": "Nama Keluarga",
 		"success": "Berjaya!",
 		"updateProfile": "Kemas Kini Profil",
 		"profilePicture": "Gambar Profil",

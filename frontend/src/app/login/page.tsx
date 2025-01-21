@@ -1,13 +1,12 @@
 "use client"
 
-import { redirect, useRouter } from "next/navigation"
-import Image from "next/image"
 import Link from "next/link"
-import React, { useEffect, useRef, useState, useTransition } from "react"
+import Image from "next/image"
 import { motion } from "motion/react"
-
-import { useLocale, useTranslations } from 'next-intl'
-import { locales } from "@/i18n/config"
+import { useTranslations } from 'next-intl'
+import { redirect, useRouter } from "next/navigation"
+import LocaleSelector from "@/components/LocaleSelector"
+import React, { useEffect, useRef, useState } from "react"
 import { setUserLocale } from "@/services/locale"
 
 const enter = {
@@ -26,7 +25,8 @@ const exit = {
 
 function SignInForm({ onSuccess }: { onSuccess: () => void }) {
 
-  const t  = useTranslations('LoginPage');
+  const t = useTranslations('LoginPage');
+  const c = useTranslations('Common') 
 
   const [signInFailed, setSignInFailed] = useState(false)
   const un_ref = useRef<HTMLInputElement>(null)
@@ -73,12 +73,12 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
     <>
       <div className="text-black text-2xl lg:text-4xl font-semibold lg:pb-3">{t('welcomeBack')}</div>
         <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base"
-        placeholder={t('username')} ref={un_ref}
+        placeholder={c('username')} ref={un_ref}
         initial={exit}
         animate={enter}
         />
         <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base"
-        placeholder={t('password')} ref={pw_ref}
+        placeholder={c('password')} ref={pw_ref}
         initial={exit}
         animate={enter}
         />
@@ -90,7 +90,7 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
         hover:scale-105 hover:drop-shadow-sm transition-all" onClick={handleSignIn}
         initial={exit}
         animate={enter}
-        >{t('logIn')}</motion.button>
+        >{c('logIn')}</motion.button>
     </>
   )
 }
@@ -114,7 +114,7 @@ function OAuthButton({ provider, icon_src }: { provider: string, icon_src: strin
 
 function SignInCard({ onSuccess }: { onSuccess: () => void }) {
 
-  const t = useTranslations('LoginPage')
+  const c = useTranslations('Common')
   
   return (
     <div className="flex flex-col w-3/4 md:w-1/2 lg:w-2/5 xl:w-1/4 h-[29rem] lg:h-[40rem] bg-gradient-to-br from-purple-200 to-[#9EFCFF]
@@ -122,7 +122,7 @@ function SignInCard({ onSuccess }: { onSuccess: () => void }) {
       <SignInForm onSuccess={onSuccess} />
       <div className="flex flex-row space-x-2 justify-center items-center">
         <hr className="flex-grow border-black"/>
-        <div className="text-black text-sm lg:text-lg font-semibold">{t('or')}</div>
+        <div className="text-black text-sm lg:text-lg font-semibold">{c('or')}</div>
         <hr className="flex-grow border-black"/>
       </div>
       <div className="flex flex-col space-y-4">
@@ -131,9 +131,9 @@ function SignInCard({ onSuccess }: { onSuccess: () => void }) {
         <OAuthButton provider="github" icon_src="/github.svg" />
       </div>
       <div className="flex flex-row text-black text-[0.6rem] lg:text-xs space-x-2 items-center justify-center">
-        <Link href="/register" className="text-blue-500 underline cursor-pointer">{t('register')}</Link>
-        <div>{t('or')}</div>
-        <Link href="/reset" className="text-blue-500 underline cursor-pointer">{t('resetPassword')}</Link>
+        <Link href="/register" className="text-blue-500 underline cursor-pointer">{c('register')}</Link>
+        <div>{c('or')}</div>
+        <Link href="/reset" className="text-blue-500 underline cursor-pointer">{c('resetPassword')}</Link>
       </div>
     </div>
   )
@@ -143,14 +143,7 @@ export default function Login() {
 
   const [success, setSuccess] = useState(false)
   const router = useRouter()
-  const t = useTranslations('Locales')
-  
-  const [isPending, startTransition] = useTransition()
 
-  const changeLang = async (locale: string) => {
-    setUserLocale(locale)
-    console.log("Change lang to : " + locale)
-  }
 
   // callback code exchange
   useEffect(() => {
@@ -179,11 +172,11 @@ export default function Login() {
     })
     .then((data) => {
       if (data.ok) {
-        setSuccess(true)
         data.json().then((json) => {
           console.log(JSON.stringify(json))
           localStorage.setItem('userID', json.id)
-          changeLang(json.lang)
+          setUserLocale(json.lang)
+          setSuccess(true)
         })
       }
     })
@@ -198,13 +191,8 @@ export default function Login() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-white items-center justify-center space-y-4">
-      <select className="absolute my-2 mx-8 top-0 right-0 w-48 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
-      items-center px-2 bg-transparent hover:bg-black/10 outline-none"
-      onChange={(e) => startTransition(() => changeLang(e.target.value))}>
-        {
-          locales.map((locale, i) =>  (<option key={i} value={locale}>{t(locale)}</option>))
-        }
-      </select>
+      <LocaleSelector className="absolute my-2 mx-8 top-0 right-0 w-48 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+      items-center px-2 bg-transparent hover:bg-black/10 outline-none" />
       <div className="font-bold text-black text-base lg:text-2xl">hypertube</div>
       <SignInCard onSuccess={() => setSuccess(true)}/>
     </div>

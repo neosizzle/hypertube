@@ -4,25 +4,38 @@
 		"ms": "Bahasa Melayu"
 	},
 
-	"LoginPage": {
+	"Common": {
 		"logIn": "Log In",
 		"register": "Register",
+		"or": "or",
 		"resetPassword": "Reset Password",
-		"welcomeBack": "Welcome back!",
 		"username": "Username",
 		"password": "Password",
-		"incorrectUserNameOrPassword": "Incorrect username or password.",
-		"or": "or",
+		"email": "Email",
+		"firstName": "First Name",
+		"lastName": "Last Name"
+	},
+
+	"LoginPage": {
+		"incorrectUsernameOrPassword": "Incorrect username or password.",
+		"welcomeBack": "Welcome back!",
 		"continueWith": "Continue With"
+	},
+
+	"ResetPasswordPage": {
+		"instructions": "Enter the email address associated with your account. A 6 digit code will be sent.",
+		"newPassword": "New Password",
+		"code": "6-digit code",
+		"sendCode": "Send Code"
+	},
+
+	"ResetSuccessPage": {
+		"resetSuccessfulMsg": "Reset Password Successful"
 	},
 
 	"AccountPage": {
 		"account": "Account",
 		"profileDetails": "Profile Details",
-		"username": "Username",
-		"email": "Email",
-		"firstName": "First Name",
-		"lastName": "Last Name",
 		"success": "Success!",
 		"updateProfile": "Update Profile",
 		"profilePicture": "Profile Picture",

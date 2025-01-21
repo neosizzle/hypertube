@@ -1,9 +1,11 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
 import { motion } from "motion/react"
+import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { useEffect, useRef, useState } from "react"
+import LocaleSelector from "@/components/LocaleSelector"
 
 const enter = {
   opacity: 1,
@@ -36,6 +38,7 @@ function RegisterCard() {
   const [errorMsg, setErrorMsg] = useState('')
 
   const router = useRouter()
+  const t = useTranslations('Common')
 
   const handleRegister = () => {
 
@@ -74,23 +77,23 @@ function RegisterCard() {
   return (
     <div className="flex flex-col w-3/4 md:w-1/2 lg:w-2/5 xl:w-1/4 h-[29rem] lg:h-[40rem] bg-gradient-to-br from-purple-200 to-[#9EFCFF]
     rounded-lg drop-shadow-lg px-12 lg:px-20 pb-12 pt-8 lg:pt-16 space-y-4">
-      <div className="text-black text-2xl lg:text-4xl font-semibold lg:pb-3">Register</div>
-      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder="Username" ref={un_ref} initial={exit} animate={enter}/>
-      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder="Password" ref={pw_ref} initial={exit} animate={enter}/>
-      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder="Email" ref={email_ref} initial={exit} animate={enter}/>
-      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder="First Name" ref={fn_ref} initial={exit} animate={enter}/>
-      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder="Last Name" ref={ln_ref} initial={exit} animate={enter}/>
+      <div className="text-black text-2xl lg:text-4xl font-semibold lg:pb-3">{t('register')}</div>
+      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('username')} ref={un_ref} initial={exit} animate={enter}/>
+      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('password')} ref={pw_ref} initial={exit} animate={enter}/>
+      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('email')} ref={email_ref} initial={exit} animate={enter}/>
+      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('firstName')} ref={fn_ref} initial={exit} animate={enter}/>
+      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('lastName')} ref={ln_ref} initial={exit} animate={enter}/>
       {errorMsg !== '' && <motion.div className="flex justify-center items-center text-red-500 text-[0.6rem] lg:text-sm"
       initial={exit}
       animate={enter}>
         {errorMsg}
       </motion.div>}
       <motion.button className="h-8 lg:h-12 bg-purple-400 rounded-lg p-1 font-bold font-white text-sm lg:text-base
-      hover:scale-105 hover:drop-shadow-sm transition-all" onClick={handleRegister} initial={exit} animate={enter}>Register</motion.button>
+      hover:scale-105 hover:drop-shadow-sm transition-all" onClick={handleRegister} initial={exit} animate={enter}>{t('register')}</motion.button>
       <div className="flex flex-row text-black text-[0.6rem] lg:text-xs space-x-2 items-center justify-center">
-        <Link href="/login" className="text-blue-500 underline cursor-pointer">Log In</Link>
-        <div>or</div>
-        <Link href="/reset" className="text-blue-500 underline cursor-pointer">Reset Password</Link>
+        <Link href="/login" className="text-blue-500 underline cursor-pointer">{t('logIn')}</Link>
+        <div>{t('or')}</div>
+        <Link href="/reset" className="text-blue-500 underline cursor-pointer">{t("resetPassword")}</Link>
       </div>
     </div> 
   )
@@ -99,6 +102,8 @@ function RegisterCard() {
 export default function Register() {
   return (
     <div className="flex flex-col h-screen w-screen bg-white items-center justify-center space-y-4">
+      <LocaleSelector className="absolute my-2 mx-8 top-0 right-0 w-48 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+      items-center px-2 bg-transparent hover:bg-black/10 outline-none"/>
       <div className="font-bold text-black text-base lg:text-2xl">hypertube</div>
       <RegisterCard key="register-card"/>
     </div>
