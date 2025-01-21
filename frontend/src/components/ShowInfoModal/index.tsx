@@ -1,11 +1,12 @@
 "use client"
 
-import { useContext, useEffect, useRef, useState } from "react";
+import { Key, useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image"
 import Modal from "../modal";
-import { FullInfo, MovieInfo, TVInfo, TVSeasonInfo, EpisodeInfo, Cast, Crew } from "../../../types/ShowInfo";
+import { FullInfo, MovieInfo, TVInfo, TVSeasonInfo, EpisodeInfo, Cast, Crew } from "../../types/ShowInfo";
 import { useRouter } from "next/navigation";
 import { SearchContext } from "@/providers/SearchProvider";
+import { Season } from "@/types/ShowInfo";
 
 function Episode({ info } : { info: EpisodeInfo }) {
 
@@ -141,14 +142,14 @@ function Episodes({info}: { info: FullInfo}) {
         <select className="text-black w-auto h-12 items-center px-2 text-xs md:text-md lg:text-lg bg-transparent hover:bg-black/10 outline-none rounded-lg"
         onChange={(e) => setSeasonNum(Number(e.target.value))}>
           {
-            (info.details as TVInfo).seasons.map((s, index) =><option key={index} value={s.season_number as number}>{'S' + s.season_number + ': ' + s.name}</option>)
+            (info.details as TVInfo).seasons.map((s: Season, index: Key | null | undefined) =><option key={index} value={s.season_number as number}>{'S' + s.season_number + ': ' + s.name}</option>)
           }
         </select>
       </div>
       <div className="px-4 text-black text-xs md:text-md lg:text-lg">{episodes && episodes.overview}</div>
       <div className="overflow-y-auto">
         {
-          episodes && episodes.episodes.map((e, index) => (<Episode key={index} info={e}/>))
+          episodes && episodes.episodes.map((e: EpisodeInfo, index: Key | null | undefined) => (<Episode key={index} info={e}/>))
         }
       </div>
     </div>
@@ -178,15 +179,24 @@ export default function ShowInfoModal({ open, onClose, info }: { open: boolean, 
             <div className="absolute top-0 w-full aspect-video z-0 bg-gradient-to-b from-transparent from-40% to-90% to-white rounded-lg" />
           </div>
           <div className="space-y-4">
-            <div className="px-4 lg:px-12 text-black text-xs md:text-md lg:text-lg font-medium">
+            <div className="px-4 lg:px-12 text-black text-xs md:text-sm lg:text-md xl:text-lg font-medium">
               {info.overview}
             </div>
-            <div className="text-xs md:text-md lg:text-lg space-y-1">
-              {info.original_title !== info.title && <div className="px-4 lg:px-12 text-black inline-block">Original Title: {info.original_title}</div>}
-              <div className="px-4 lg:px-12 text-black font-medium">
-                Genres: {info.genres.map((g) => g.name).join(', ')}
+            <div className="flex flex-col md:flex-row">
+              <div className="text-xs md:text-md lg:text-lg space-y-1 w-2/3">
+                {info.original_title !== info.title && <div className="px-4 lg:px-12 text-black inline-block">Original Title: {info.original_title}</div>}
+                <div className="px-4 lg:px-12 text-black font-medium">
+                  Genres: {info.genres.map((g) => g.name).join(', ')}
+                </div>
+                <Credits info={info}/>
               </div>
-              <Credits info={info}/>
+              <div className="text-xs md:text-md lg:text-lg space-y-1 pt-1 md:pt-0 text-black px-4 md:px-0">
+                <div>Ratings:</div>
+                <div className="flex flex-row items-center space-x-4">
+                  <Image src="/imdb.svg" alt="imdb" width={25} height={25} className="w-5 h-5 lg:w-8 lg:h-8" />
+                  <div>{info.details.imdb_rating} / 10.0</div>
+                </div>
+              </div>
             </div>
             {info.type === "tv" ? <Episodes info={info}/> : <Movie info={info}/>}
           </div>

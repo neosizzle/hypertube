@@ -36,18 +36,19 @@ function CommentInput({ profilePicURL, isLoggedIn }: { profilePicURL: string, is
   }
 
   return (
-    <div className="flex flex-row space-x-4 p-4">
+    <div className="flex flex-row space-x-4 px-4">
       <Image src={profilePicURL} alt="user" width={1000} height={1000} className="justify-start items-center self-start w-5 h-5 lg:w-8 lg:h-8 rounded-full"/>
       <div className="flex flex-col space-y-2 w-full">
-        <input className="w-full h-8 text-black text-xs lg:text-md bg-transparent outline-none" placeholder={isLoggedIn ? "Add a comment..." : "You need to be logged in to comment."}
+        <input className="w-full h-8 text-black text-xs sm:text-sm md:text-md lg:text-lg bg-transparent outline-none"
+        placeholder={isLoggedIn ? "Add a comment..." : "You need to be logged in to comment."}
         onFocus={() => isLoggedIn ? setCommenting(true) : ''} disabled={!isLoggedIn}/>
         <motion.div className="" initial={exit} animate={commenting ? enter : exit} >
           <hr className="w-full h-1 bg-gradient-to-r from-purple-200 to-[#9EFCFF] bg-clip-border mb-2 rounded-md" />
           <div className="flex flex-row justify-start items-center">
-            <button className="h-8 bg-purple-400 rounded-lg px-4 text-white text-xs lg:text-sm
+            <button className="h-8 bg-purple-400 rounded-lg px-4 text-white text-xs sm:text-sm md:text-md lg:text-lg
             hover:scale-105 hover:drop-shadow-sm transition-all justify-center items-center" onClick={handleComment}
             >Comment</button>
-            <button className="h-8 bg-transparent px-4 text-black text-xs lg:text-sm
+            <button className="h-8 bg-transparent px-4 text-black text-xs sm:text-sm md:text-md lg:text-lg
             hover:text-gray-500" onClick={() => setCommenting(false)}
             >Cancel</button>
           </div>
@@ -66,14 +67,14 @@ function Comment({ username, userID, content }: { username: string, userID: numb
   }
 
   return (
-    <div className="flex flex-row space-x-2 lg:space-x-4 p-4">
+    <div className="flex flex-row space-x-2 lg:space-x-4 px-4">
       <Image src="/discord.svg" alt="user" width={1000} height={1000}
       className="justify-start items-center self-start w-5 h-5 lg:w-8 lg:h-8 cursor-pointer rounded-full border-[1.5px] border-black"
       onClick={handleClick}/>
       <div className="flex flex-col space-y-1">
-        <div className="text-black text-xs lg:text-md font-bold cursor-pointer"
+        <div className="text-black text-xs sm:text-sm md:text-md lg:text-lg font-bold cursor-pointer"
         onClick={handleClick}>{'@' + username}</div>
-        <div className="text-black text-xs lg:text-md">{content}</div>
+        <div className="text-black text-xs sm:text-sm md:text-md lg:text-lg">{content}</div>
       </div>
     </div>
   )
@@ -99,8 +100,8 @@ function CommentSection() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full bg-gray-100 lg:rounded-lg lg:p-5">
-      <div className="text-black text-bold text-xl lg:text-4xl p-4">Comments</div>
+    <div className="flex flex-col h-full bg-gray-100 lg:rounded-lg py-4 lg:p-5 space-y-4 lg:space-y-8">
+      <div className="text-black text-bold text-xl lg:text-4xl px-4">Comments</div>
       <CommentInput profilePicURL={profilePicURL} isLoggedIn={isLoggedIn}/>
       <Comment username="skibidfan69" userID={1} content="i fucking hate this show!!!"/>
       <Comment username="skibidfan69" userID={1}content="i fucking hate this show!!!"/>

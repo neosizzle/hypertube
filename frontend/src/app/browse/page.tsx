@@ -47,7 +47,7 @@ export default function Browse() {
   return (
     <div className="h-auto w-full bg-white flex flex-col justify-between">
       <Header />
-      <div className="h-auto flex flex-col justify-center py-10 mb-auto">
+      <div className="h-auto flex flex-col justify-center py-10 px-10 lg:px-16 mb-auto space-y-8">
         <div className="font-bold text-2xl text-black py-4 text-center lg:text-center px-4">Popular Shows</div>
         <ShowGrid data={trending} handleClickShowCard={handleClickShowCard} />
       </div>
