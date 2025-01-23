@@ -56,7 +56,7 @@ function Episode({ info } : { info: EpisodeInfo }) {
       <div className="flex w-3 lg:w-5 justify-center items-center text-md lg:text-2xl text-black">{info.episode_number}</div>
       <Image src={info.still_path} alt={info.title !== '' ? info.title : `Episode ${info.episode_number}`} width={1920} height={1000}
       className="w-24 lg:w-48 aspect-video object-cover z-0 rounded-lg"/>
-      <div className="text-black flex-col space-y-1 w-[30rem]">
+      <div className="text-black flex-col space-y-1 w-[40rem]">
         <div className="flex flex-row justify-between items-center">
           <div className="font-bold text-sm lg:text-lg line-clamp-1 lg:line-clamp-2 text-ellipsis text-left">{info.title !== '' ? info.title : `Episode ${info.episode_number}`}</div>
           <div className="text-xs lg:text-lg hidden md:block">{getSubTitle()}</div>
@@ -136,8 +136,8 @@ function Episodes({info}: { info: FullInfo}) {
   }, [seasonNum, info])
 
   return (
-    <div className="lg:px-8 space-y-4">
-      <div className="flex flex-row justify-between items-center px-4">
+    <div className="lg:px-8 space-y-4 w-full">
+      <div className="flex flex-row justify-between items-center px-4 w-full">
         <div className="text-black text-bold text-lg lg:text-3xl">Episodes</div>
         <select className="text-black w-auto h-12 items-center px-2 text-xs md:text-md lg:text-lg bg-transparent hover:bg-black/10 outline-none rounded-lg"
         onChange={(e) => setSeasonNum(Number(e.target.value))}>
@@ -147,7 +147,7 @@ function Episodes({info}: { info: FullInfo}) {
         </select>
       </div>
       <div className="px-4 text-black text-xs md:text-md lg:text-lg">{episodes && episodes.overview}</div>
-      <div className="overflow-y-auto">
+      <div className="overflow-y-auto w-full">
         {
           episodes && episodes.episodes.map((e: EpisodeInfo, index: Key | null | undefined) => (<Episode key={index} info={e}/>))
         }

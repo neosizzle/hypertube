@@ -10,6 +10,7 @@ import { FullInfo, ShortInfo } from "../../types/ShowInfo";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useInView } from "react-intersection-observer";
 import ShowGrid from "@/components/ShowGrid";
+import { useTranslations } from "next-intl";
 
 const parseDate = (dateString: string) => {
   const [year, month, day] = dateString.split('-').map(Number);
@@ -41,6 +42,10 @@ export default function Search() {
   const [toYear, setToYear] = useState<Date>(new Date())
   const [filterType, setFilterType] = useState('all')
   const [filteredResults, setFilteredResults] = useState(results)
+
+  // translation
+  const c = useTranslations('Common')
+  const t = useTranslations('SearchPage')
   
   // debounce search query
   useEffect(() => setDebounceQuery(searchQuery), [debounce])
@@ -111,26 +116,26 @@ export default function Search() {
       <Header />
       <div className="h-auto w-full flex flex-col justify-center py-10 px-10 lg:px-16 mb-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between md:pt-12 space-y-4 md:space-y-0">
-          <div className="text-black text-md md:text-lg lg:text-4xl font-medium">Search results for: "{searchQuery}"</div>
+          <div className="text-black text-md md:text-lg lg:text-4xl font-medium">{t('searchResultsFor') + ": \"" + searchQuery + "\""}</div>
           <div className="flex flex-row text-xs md:text-md lg:text-lg items-center space-x-4">
-            <div className="text-black ">Filter by: </div>
+            <div className="text-black ">{t('filterBy') + ": "}</div>
             <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
             onChange={(e) => setFilterOption(e.target.value)}>
-              <option key={1} value='none'>None</option>
-              <option key={2} value='type'>Type</option>
-              <option key={3} value='year'>Year</option>
+              <option key={1} value='none'>{t('none')}</option>
+              <option key={2} value='type'>{t('type')}</option>
+              <option key={3} value='year'>{t('year')}</option>
             </select>
             {
               filterOption === 'year' &&
               <div className="flex flex-row text-black space-x-4 justify-center items-center">
                 <div className="flex w-20 h-10 rounded-md border-2 border-black p-2 space-x-2 justify-center items-center">
-                  <input placeholder="From"
+                  <input placeholder={t('fromYear')}
                   className="w-full outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
                   type="number" onInput={(e) => setFromYear((e.target as HTMLInputElement).value === '' ? new Date() : new Date(Number((e.target as HTMLInputElement).value), 0, 1))}/>
                 </div>
                 <div className="text-black font-bold text-2xl">-</div>
                 <div className="flex w-20 h-10 rounded-md border-2 border-black p-2 space-x-2 justify-center items-center">
-                  <input placeholder="To"
+                  <input placeholder={t('toYear')}
                   className="w-full outline-none focus:outline-none focus:ring-0 border-none overflow-hidden bg-transparent"
                   type="number" onInput={(e) => setToYear((e.target as HTMLInputElement).value === '' ? new Date() : new Date(Number((e.target as HTMLInputElement).value), 11, 31))}/>
                 </div>
@@ -140,10 +145,11 @@ export default function Search() {
               filterOption === 'type' &&
               <div className="flex flex-row text-black space-x-4 justify-center items-center">
                 <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
+                value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}>
-                  <option key={1} value='all'>All</option>
-                  <option key={2} value='movie'>Movie</option>
-                  <option key={3} value='tv'>TV Series</option>
+                  <option key={1} value='all'>{t('all')}</option>
+                  <option key={2} value='movie'>{c('movie')}</option>
+                  <option key={3} value='tv'>{c('tv')}</option>
                 </select>
               </div>
             }

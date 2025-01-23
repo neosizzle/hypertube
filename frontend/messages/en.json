@@ -13,7 +13,9 @@
 		"password": "Password",
 		"email": "Email",
 		"firstName": "First Name",
-		"lastName": "Last Name"
+		"lastName": "Last Name",
+		"movie": "Movie",
+		"tv": "TV Series"
 	},
 
 	"LoginPage": {
@@ -53,16 +55,22 @@
 		"popularShows": "Popular Shows"
 	},
 
+	"SearchPage": {
+		"searchResultsFor": "Search results for",
+		"filterBy": "Filter by",
+		"none": "None",
+		"type": "Type",
+		"year": "Year",
+		"fromYear": "From",
+		"toYear": "To",
+		"all": "All"
+	},
+
 	"Header": {
 		"home": "Home",
 		"logOut": "Log Out",
 		"account": "Account",
 		"search": "Search",
 		"logIn": "Log In"
-	},
-
-	"ShowCard": {
-		"movie": "Movie",
-		"tv": "TV Series"
 	}
 }

@@ -13,7 +13,9 @@
 		"password": "Kata Laluan",
 		"email": "E-mel",
 		"firstName": "Nama Pertama",
-		"lastName": "Nama Keluarga"
+		"lastName": "Nama Keluarga",
+		"movie": "Filem",
+		"tv": "Siri TV"
 	},
 
 	"LoginPage": {
@@ -53,16 +55,22 @@
 		"popularShows": "Filem Terkenal"
 	},
 
+	"SearchPage": {
+		"searchResultsFor": "Hasil carian untuk",
+		"filterBy": "Tapis mengikut",
+		"none": "Tiada",
+		"type": "Jenis Rancangan",
+		"year": "Tahun Siaran",
+		"fromYear": "Dari",
+		"toYear": "Ke",
+		"all": "Semua"
+	},
+
 	"Header": {
 		"home": "Utama",
 		"logOut": "Daftar Keluar",
 		"account": "Akaun",
-		"search": "Cari",
+		"search": "Cari rancangan",
 		"logIn": "Daftar Masuk"
-	},
-
-	"ShowCard": {
-		"movie": "Filem",
-		"tv": "Siri TV"
 	}
 }
