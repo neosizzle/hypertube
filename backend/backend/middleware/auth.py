@@ -1,3 +1,4 @@
+import re
 from django.http import HttpResponseForbidden
 from django.utils import timezone
 
@@ -5,17 +6,23 @@ from app_users.models import AppUser, Session
 
 class AuthMiddleware:
 	non_auth_paths = [
-		("POST", "/api/auth/login"),
-		("POST", "/api/users"),
-		("GET", "/api/oauth"),
-		("POST", "/api/auth/otp"),
-		("POST", "/api/auth/reset"),
-		("GET", "/api/videos"),
-		("GET", "/api/comments"),
-		("GET", "/api/show/search"),
-		("GET", "/api/show/popular"),
-		("GET", "/api/show/info"),
-		("GET", "/api/show/tv/season"),
+		("POST", r"^/api/auth/login$"),
+		("POST", r"^/api/users$"),
+		("GET", r"^/api/oauth$"),
+		("POST", r"^/api/auth/otp$"),
+		("POST", r"^/api/auth/reset$"),
+		("GET", r"^/api/videos$"),
+		("GET", r"^/api/videos/comments/\d+$"),
+		("GET", r"^/api/comments$"),
+		("GET", r"^/api/comments/all$"),
+		("GET", r"^/api/show/search$"),
+		("GET", r"^/api/show/popular$"),
+		("GET", r"^/api/show/info$"),
+		("GET", r"^/api/show/tv/season$"),
+		("GET", r"^/api/torrent/tv/search$"),
+		("GET", r"^/api/torrent/movie/search$"),
+		("GET", r"^/api/videos/fromTMDB$"),
+		("GET", r"^/api/videos/stream$"),
 		]
 	admin_path = "/admin" # allow all admin paths to pass, they use another auth system
 	media_path = "/media" # allow all media paths to pass, they are publoic
@@ -29,8 +36,16 @@ class AuthMiddleware:
 	# intercepted here
 	def process_view(self, request, view_func, view_args, view_kwargs):
 		key = (request.method, request.path)
+		print(key)
 		try:
-			if request.path.startswith(self.admin_path) or request.path.startswith(self.media_path) or key in self.non_auth_paths or request.app_user is not None:
+			if request.path.startswith(self.admin_path) or request.path.startswith(self.media_path):
+				return None
+			
+			for method, path in self.non_auth_paths:
+				if method == key[0] and re.match(path, key[1]):
+					return None
+				
+			if request.app_user is not None:
 				return None
 		except AttributeError: # app user is not in request
 			return HttpResponseForbidden("Token invalid")
