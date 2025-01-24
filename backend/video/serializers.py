@@ -9,9 +9,11 @@ from app_users.models import AppUser
 class VideoSerializer(serializers.Serializer):
 	id = serializers.IntegerField(read_only=True)
 	name = serializers.CharField(max_length=100, validators=[UniqueValidator(queryset=Video.objects.all())])
+	overview = serializers.CharField(max_length=1000)
 	subtitles = serializers.FileField(read_only=True, required=False, allow_null=True, default='thumbnail/subtitles.png')
 	watched_by = serializers.PrimaryKeyRelatedField(queryset=AppUser.objects.all(), many=True, required=False)	
-	
+	tmdb_id = serializers.IntegerField(required=True)
+	type = serializers.CharField(max_length=5, required=True) # movie or tv
 
 	def create(self, validated_data):
 		# NOTE: NOT NULL constraint failed: video_video.torrent_id
@@ -20,8 +22,11 @@ class VideoSerializer(serializers.Serializer):
 
 	def update(self, instance, validated_data):
 		instance.name = validated_data.get('name', instance.name)
+		instance.overview = validated_data.get('overview', instance.name)
 		instance.subtitles = validated_data.get('subtitles', instance.subtitles)
 		instance.watched_by = validated_data.get('watched_by', instance.watched_by)
+		instance.tmdb_id = validated_data.get('tmdb_id', instance.tmdb_id)
+		instance.type = validated_data.get('type', instance.type)
 
 		instance.save()
 		return instance
@@ -41,7 +46,7 @@ class CommentSerializer(serializers.Serializer):
 		user_obj = {
 			'id': user.id,
 			'username': user.username,
-			'profile_picture': str(user.profile_picture)
+			'profile_picture': user.profile_picture.url
 		}
 
 		representation['user'] = user_obj
