@@ -245,19 +245,14 @@ class ShowInfo(APIView):
         if type == 'tv':
             
             response = requests.get(
-                f'{TMDB_API_ENDPOINT}/{type}/{tmdb_id}/external_ids?{urlencode({
-                    'api_key': os.getenv('TMDB_KEY')
-                })}')
+                f"{TMDB_API_ENDPOINT}/{type}/{tmdb_id}/external_ids?{urlencode({'api_key': os.getenv('TMDB_KEY')})}")
             
             data = response.json()
             payload['details']['imdb_id'] = data.get('imdb_id', '')
         
         # on fail Response: False
         omdb_response = requests.get(
-            f'{OMDB_API_ENDPOINT}?{urlencode({
-                'apikey': os.getenv('OMDB_KEY'),
-                'i': payload['details']['imdb_id']
-            })}')
+            f"{OMDB_API_ENDPOINT}?{urlencode({'apikey': os.getenv('OMDB_KEY'),'i': payload['details']['imdb_id']})}")
 
         payload['details']['imdb_rating'] = omdb_response.json().get('imdbRating', '')
         

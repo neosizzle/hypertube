@@ -18,7 +18,7 @@ export default function Home() {
     }
 
     // socket connect
-    const socket = new WebSocket('ws://localhost:8765');
+    const socket = new WebSocket('ws://localhost:8000/ws/signalling/');
     socket.onopen = () => {
       
       // create rtc peer
@@ -29,11 +29,11 @@ export default function Home() {
         // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
         const data_str = JSON.stringify(data)
         if (!connectedStateRef.current)
-          socket.send(`handshake|${data_str}`)
+          socket.send(`pass|handshake|${data_str}|asd|asd|asd`)
 
         // for ack video, 'data will contain ack message
         else
-          socket.send(`video|${data_str}`)
+          socket.send(`pass|video|${data_str}|asd|asd|adas`)
 
         alert(`peer signal, connected? ${connectedStateRef.current}`)
       });
@@ -57,9 +57,9 @@ export default function Home() {
 
     socket.onmessage = (event) => {
       const tokens = event.data.split("|");
-      const type = tokens[0]
-      const message = tokens[1]
-      // console.log('Message from server:', event.data);
+      const type = tokens[1]
+      const message = tokens[2]
+      console.log('Message from server:', message);
 
       if (type == "handshake") {
         // we should have an answer here. 
@@ -75,8 +75,9 @@ export default function Home() {
       
     };
 
-    socket.onclose = () => {
-      console.log('WebSocket connection closed');
+    socket.onclose = (what) => {
+      console.log(`WebSocket connection closed`);
+      console.log(what)
     };
   
     wsRef.current = socket;

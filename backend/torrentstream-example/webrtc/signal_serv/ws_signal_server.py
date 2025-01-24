@@ -35,7 +35,7 @@ async def echo(websocket):
     try:
         async for message in websocket:
             # ws messaged received, filter
-            (msg_type, content) = message.split("|")
+            (token, msg_type, content, p1, p2, p3) = message.split("|")
             # print(f"Received message: {content}")
 
             if msg_type == "handshake":
@@ -60,7 +60,7 @@ async def echo(websocket):
 
                 # can access offer answer using pc.localDescription. we should send this back to client via ws
                 answer_to_send = object_to_string(pc.localDescription)
-                await websocket.send(f"handshake|{answer_to_send}")
+                await websocket.send(f"pass|handshake|{answer_to_send}")
 
                 # wait for some time for client to recv
                 time.sleep(0.1)
@@ -77,7 +77,7 @@ async def echo(websocket):
                 # https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
                 await pc.setLocalDescription(await pc.createOffer())
                 nego_to_send = object_to_string(pc.localDescription)         
-                await websocket.send(f"video|{nego_to_send}") # NOTE: use datachannel here?
+                await websocket.send(f"pass|video|{nego_to_send}") # NOTE: use datachannel here?
 
                 # add client to global refrence
                 clients.append(pc)
@@ -96,8 +96,8 @@ async def echo(websocket):
         print(f"Connection closed: {e}")
 
 async def main():
-    server = await websockets.serve(echo, "localhost", 8765)
-    print("WebSocket server running on ws://localhost:8765")
+    server = await websockets.serve(echo, "localhost", 8000)
+    print("WebSocket server running on ws://localhost:8000")
     await server.wait_closed()
 
 asyncio.run(main())
