@@ -41,11 +41,23 @@ urlpatterns = [
     path('api/videos', video_views.VideoList.as_view()),
     path('api/videos/watched/<int:pk>', video_views.VideoWatchedDetail.as_view()),
     path('api/videos/<int:pk>', video_views.VideoList.as_view()),
-    path('api/comments', video_views.CommentList.as_view()),
+    path('api/videos/fromTMDB', video_views.FromTMDB.as_view()),
+    path('api/videos/stream', video_views.StreamVideo.as_view()),
+    
+    # comments
+    path('api/videos/comments/<int:pk>', video_views.CommentsByVideo.as_view()),
+    path('api/comments/all', video_views.AllComments.as_view()),
+    path('api/comments/<int:pk>', video_views.CommentByID.as_view()),
+    
+    # shows
     path('api/show/search', video_views.SearchExternalSource.as_view()),
     path('api/show/popular', video_views.TrendingShows.as_view()),
     path('api/show/info', video_views.ShowInfo.as_view()),
-    path('api/show/tv/season', video_views.SeasonInfo.as_view())
+    path('api/show/tv/season', video_views.SeasonInfo.as_view()),
+    
+    # torrent
+    path('api/torrent/tv/search', video_views.FindTVTorrentFile.as_view()),
+    path('api/torrent/movie/search', video_views.FindMovieTorrentFile.as_view()),
 ]
 
 from django.conf import settings

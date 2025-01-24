@@ -1,10 +1,11 @@
+import json
 import os
 import requests
 import time
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework import status
 from urllib.parse import urlencode
 from secrets import token_urlsafe
@@ -15,12 +16,13 @@ from PIL import Image
 from dotenv import load_dotenv
 import yagmail
 from datetime import datetime
+from groq import Groq
 
 from logging import info, error
 
 load_dotenv()
 
-from .models import Video, Comment
+from .models import Video, Comment, Torrent
 from .serializers import VideoSerializer, CommentSerializer
 
 class VideoList(APIView):
@@ -46,9 +48,9 @@ class VideoList(APIView):
 		result_page = paginator.paginate_queryset(videos, request)
 		serializer = VideoSerializer(result_page, many=True)
 		return Response({
-            "total_count": videos.count(),
-            "results": serializer.data
-        })
+			"total_count": videos.count(),
+			"results": serializer.data
+		})
 
 	def post(self, request, format=None):
 		serializer = VideoSerializer(data=request.data)
@@ -83,32 +85,77 @@ class VideoWatchedDetail(APIView):
 			error(e)
 			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class CommentList(APIView):
+class CommentsByVideo(APIView):
 	# NOTE: Required query parameters: video_id
-	def get(self, request, format=None):
-		video_id = request.query_params.get('video_id')
+	def get(self, request, format=None, pk=None):
+
+		video_id = pk
 		
 		if not video_id:
 			return Response({"detail": "video_id parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
 
 		try:
 			video = Video.objects.get(id=video_id)
-			comments = Comment.objects.filter(video=video)
+			comments = Comment.objects.filter(video=video).order_by('-created')
 			serializer = CommentSerializer(comments, many=True)
 			return Response(serializer.data)
 		except Video.DoesNotExist:
 			return Response({"detail": "Video not found."}, status=status.HTTP_404_NOT_FOUND)
 	
 
-	def post(self, request, format=None):
-		body = request.data
+	def post(self, request, format=None, pk=None):
 
+		body = request.data
 		body['user'] = request.app_user.id
+		body['video'] = pk
 		serializer = CommentSerializer(data=request.data)
 		if serializer.is_valid():
 			serializer.save()
 			return Response(serializer.data, status=status.HTTP_201_CREATED)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AllComments(APIView):
+
+	def get(self, request, format=None):
+
+		comments = Comment.objects.all()
+
+		# newest items first
+		res = comments.order_by('-created')
+
+		p = PageNumberPagination()
+		p.page_size = 10
+		paginated_comments = p.paginate_queryset(res, request)
+		serializer = CommentSerializer(paginated_comments, many=True)
+
+		return p.get_paginated_response(serializer.data)
+
+
+class CommentByID(APIView):
+
+	def get(self, request, format=None, pk=None):
+
+		try:
+			comment = Comment.objects.get(pk=pk)
+
+		except Comment.DoesNotExist:
+			return Response({"detail": "Comment not found."},
+							status=status.HTTP_404_NOT_FOUND)
+
+		serializer = CommentSerializer(comment)
+		return Response(serializer.data, status=status.HTTP_200_OK)
+
+	def delete(self, request, format=None, pk=None):
+
+		try:
+			comment = Comment.objects.get(pk=pk)
+
+		except Comment.DoesNotExist:
+			return Response({"detail": "Comment not found."},
+				status=status.HTTP_404_NOT_FOUND)
+			
+		comment.delete()
+		return Response(status=status.HTTP_200_OK)
 
 TMDB_IMAGE_PATH = 'https://image.tmdb.org/t/p/original'
 TMDB_API_ENDPOINT = 'https://api.themoviedb.org/3'
@@ -116,207 +163,521 @@ DEFAULT_POSTER_PATH = 'http://localhost:8000/media/thumbnail/default.png'
 OMDB_API_ENDPOINT = 'http://www.omdbapi.com/'
 
 class SearchExternalSource(APIView):
-    
-    def get(self, request, format=None):
-        
-        query = request.query_params.get('query')
-        page = request.query_params.get('page', 1)
-        
-        if not query:
-            return Response({"detail": "query must not be empty"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        params = {
-            'query': query,
-            'api_key': os.getenv('TMDB_KEY'),
-            'page': page
-        }
-        
-        tv_response = requests.get(f'{TMDB_API_ENDPOINT}/search/tv?{urlencode(params)}')
-        movie_response = requests.get(f'{TMDB_API_ENDPOINT}/search/movie?{urlencode(params)}')
-        
-        tv_data = tv_response.json()
-        movie_data = movie_response.json()
+	
+	def get(self, request, format=None):
+		
+		query = request.query_params.get('query')
+		page = request.query_params.get('page', 1)
+		
+		if not query:
+			return Response({"detail": "query must not be empty"}, status=status.HTTP_400_BAD_REQUEST)
+		
+		params = {
+			'query': query,
+			'api_key': os.getenv('TMDB_KEY'),
+			'page': page
+		}
+		
+		tv_response = requests.get(f'{TMDB_API_ENDPOINT}/search/tv?{urlencode(params)}')
+		movie_response = requests.get(f'{TMDB_API_ENDPOINT}/search/movie?{urlencode(params)}')
+		
+		tv_data = tv_response.json()
+		movie_data = movie_response.json()
 
-        results = []
-        
-        for r in tv_data['results']:
-            
-            results.append({
-                'title': r['name'],
-                'date': r.get('first_air_date', ''),
-                'type': 'tv',
-                'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
-                'id': r['id']
-            })
-        
-        for r in movie_data['results']:
-            
-            results.append({
-                'title': r['title'],
-                'date': r.get('release_date', ''),
-                'type': 'movie',
-                'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
-                'id': r['id']
-            })
+		results = []
+		
+		for r in tv_data['results']:
+			
+			results.append({
+				'title': r['name'],
+				'date': r.get('first_air_date', ''),
+				'type': 'tv',
+				'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
+				'id': r['id']
+			})
+		
+		for r in movie_data['results']:
+			
+			results.append({
+				'title': r['title'],
+				'date': r.get('release_date', ''),
+				'type': 'movie',
+				'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
+				'id': r['id']
+			})
 
-        results = sorted(results, key=lambda x : x.get('title', ''))
-        
-        results = filter(lambda x:  x.get('date') != '' and datetime.strptime(x.get('date'),'%Y-%m-%d') <= datetime.now(), results)
-        
-        payload = {}
-        
-        payload['results'] = results
-        payload['page'] = page
-        payload['total_pages'] = max(tv_data['total_pages'], movie_data['total_pages'])
-        payload['total_results'] = tv_data['total_results'] + movie_data['total_results']
+		results = sorted(results, key=lambda x : x.get('title', ''))
+		
+		results = filter(lambda x:  x.get('date') != '' and datetime.strptime(x.get('date'),'%Y-%m-%d') <= datetime.now(), results)
+		
+		payload = {}
+		
+		payload['results'] = results
+		payload['page'] = page
+		payload['total_pages'] = max(tv_data['total_pages'], movie_data['total_pages'])
+		payload['total_results'] = tv_data['total_results'] + movie_data['total_results']
 
-        return Response(payload, status=status.HTTP_200_OK)
+		return Response(payload, status=status.HTTP_200_OK)
 
 class TrendingShows(APIView):
 
-    def get(self, request, format=None):
+	def get(self, request, format=None):
 
-        type = request.query_params.get('type')
+		type = request.query_params.get('type')
 
-        params = {
-            'api_key': os.getenv('TMDB_KEY')
-        }
-        
-        url = f'{TMDB_API_ENDPOINT}/{type}/popular?{urlencode(params)}'
+		params = {
+			'api_key': os.getenv('TMDB_KEY')
+		}
+		
+		url = f'{TMDB_API_ENDPOINT}/{type}/popular?{urlencode(params)}'
 
-        response = requests.get(url)
-        
-        data = response.json()
-        
-        results = [{
-            'title': r['title'] if type == 'movie' else r['name'],
-            'date': r.get('release_date', ''),
-            'type': type,
-            'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
-            'id': r['id']
-        } for r in data['results']]
+		response = requests.get(url)
+		
+		data = response.json()
+		
+		results = [{
+			'title': r['title'] if type == 'movie' else r['name'],
+			'date': r.get('release_date', ''),
+			'type': type,
+			'poster_path': TMDB_IMAGE_PATH + r['poster_path']  if r.get('poster_path') else DEFAULT_POSTER_PATH,
+			'id': r['id']
+		} for r in data['results']]
 
-        return Response(results, status=status.HTTP_200_OK)
+		return Response(results, status=status.HTTP_200_OK)
 
 class ShowInfo(APIView):
-    
-    def get(self, request, format=None):
-        
-        tmdb_id = request.query_params.get('id')
-        type = request.query_params.get('type')
-        
-        if not (tmdb_id or type):
-            return Response({"detail": "id or type must not be empty"},
-                            status=status.HTTP_400_BAD_REQUEST)
+	
+	def get(self, request, format=None):
+		
+		tmdb_id = request.query_params.get('id')
+		type = request.query_params.get('type')
+		
+		if not (tmdb_id or type):
+			return Response({"detail": "id or type must not be empty"},
+							status=status.HTTP_400_BAD_REQUEST)
 
-        params = {
-            'api_key': os.getenv('TMDB_KEY'),
-            'append_to_response': 'credits'
-        }
-        
-        url = f'{TMDB_API_ENDPOINT}/{type}/{tmdb_id}?{urlencode(params)}'
-        response = requests.get(url)
-        
-        if response.status_code != 200:
-            return Response({"detail": "external endpoint died"},
-                            status=status.HTTP_404_NOT_FOUND)
-        
-        data = response.json()
-        
-        payload = {k: data[k] for k in (
-            'adult', 'backdrop_path', 'genres', 'homepage', 'id',
-            'original_language', 'overview', 'popularity', 'poster_path',
-            'production_companies', 'production_countries', 'spoken_languages',
-            'tagline', 'vote_average', 'vote_count', 'credits'
-        )}
-        
-        payload['title'] = data['title'] if type == 'movie' else data['name']
-        payload['original_title'] = data['original_title'] if type == 'movie' else data['original_name']
-        payload['type'] = type
-        payload['details'] = {k: data[k] for k in (
-            'budget', 'imdb_id', 'release_date', 'revenue', 'runtime', 'status'
-        )} if type == 'movie' else {k: data[k] for k in (
-            'episode_run_time', 'first_air_date', 'in_production', 'languages',
-            'last_air_date', 'last_episode_to_air', 'next_episode_to_air',
-            'networks', 'number_of_episodes', 'number_of_seasons',
-            'origin_country', 'seasons'
-        )}
-        
-        if type == 'tv':
-            
-            response = requests.get(
-                f'{TMDB_API_ENDPOINT}/{type}/{tmdb_id}/external_ids?{urlencode({
-                    'api_key': os.getenv('TMDB_KEY')
-                })}')
-            
-            data = response.json()
-            payload['details']['imdb_id'] = data.get('imdb_id', '')
-        
-        # on fail Response: False
-        omdb_response = requests.get(
-            f'{OMDB_API_ENDPOINT}?{urlencode({
-                'apikey': os.getenv('OMDB_KEY'),
-                'i': payload['details']['imdb_id']
-            })}')
+		params = {
+			'api_key': os.getenv('TMDB_KEY'),
+			'append_to_response': 'credits'
+		}
+		
+		url = f'{TMDB_API_ENDPOINT}/{type}/{tmdb_id}?{urlencode(params)}'
+		response = requests.get(url)
+		
+		if response.status_code != 200:
+			return Response({"detail": "external endpoint died"},
+							status=status.HTTP_404_NOT_FOUND)
+		
+		data = response.json()
+		
+		payload = {k: data[k] for k in (
+			'adult', 'backdrop_path', 'genres', 'homepage', 'id',
+			'original_language', 'overview', 'popularity', 'poster_path',
+			'production_companies', 'production_countries', 'spoken_languages',
+			'tagline', 'vote_average', 'vote_count', 'credits'
+		)}
+		
+		payload['title'] = data['title'] if type == 'movie' else data['name']
+		payload['original_title'] = data['original_title'] if type == 'movie' else data['original_name']
+		payload['type'] = type
+		payload['details'] = {k: data[k] for k in (
+			'budget', 'imdb_id', 'release_date', 'revenue', 'runtime', 'status'
+		)} if type == 'movie' else {k: data[k] for k in (
+			'episode_run_time', 'first_air_date', 'in_production', 'languages',
+			'last_air_date', 'last_episode_to_air', 'next_episode_to_air',
+			'networks', 'number_of_episodes', 'number_of_seasons',
+			'origin_country', 'seasons'
+		)}
+		
+		if type == 'tv':
+			
+			tmdb_params = {
+				'api_key': os.getenv('TMDB_KEY')
+			}
+			
+			response = requests.get(
+				f'{TMDB_API_ENDPOINT}/{type}/{tmdb_id}/external_ids?{urlencode(tmdb_params)}')
+			
+			data = response.json()
+			payload['details']['imdb_id'] = data.get('imdb_id', '')
+		
+		omdb_params = {
+			'apikey': os.getenv('OMDB_KEY'),
+			'i': payload['details']['imdb_id']
+		}
+		
+		# on fail Response: False
+		omdb_response = requests.get(f'{OMDB_API_ENDPOINT}?{urlencode(omdb_params)}')
 
-        payload['details']['imdb_rating'] = omdb_response.json().get('imdbRating', '')
-        
-        payload['poster_path'] = TMDB_IMAGE_PATH + payload['poster_path'] \
-            if payload.get('poster_path') else DEFAULT_POSTER_PATH
-        payload['backdrop_path'] = TMDB_IMAGE_PATH + payload['backdrop_path'] \
-            if payload.get('backdrop_path') else DEFAULT_POSTER_PATH
-        
-        
-        payload['credits']['cast'] = [{k: v for k, v in cast.items()
-                                       if k in ('id', 'known_for_department',
-                                           'name', 'original_name',
-                                           'character')} 
-                                      for cast in payload['credits']['cast']]
-            
-            
-        payload['credits']['crew'] = [{k: v for k, v in crew.items()
-                                       if k in ('id', 'known_for_department',
-                                           'original_name', 'character',
-                                           'name', 'department', 'job')}
-                                      for crew in payload['credits']['crew']]
+		payload['details']['imdb_rating'] = omdb_response.json().get('imdbRating', '')
+		
+		payload['poster_path'] = TMDB_IMAGE_PATH + payload['poster_path'] \
+			if payload.get('poster_path') else DEFAULT_POSTER_PATH
+		payload['backdrop_path'] = TMDB_IMAGE_PATH + payload['backdrop_path'] \
+			if payload.get('backdrop_path') else DEFAULT_POSTER_PATH
+		
+		
+		payload['credits']['cast'] = [{k: v for k, v in cast.items()
+									   if k in ('id', 'known_for_department',
+										   'name', 'original_name',
+										   'character')} 
+									  for cast in payload['credits']['cast']]
+			
+			
+		payload['credits']['crew'] = [{k: v for k, v in crew.items()
+									   if k in ('id', 'known_for_department',
+										   'original_name', 'character',
+										   'name', 'department', 'job')}
+									  for crew in payload['credits']['crew']]
 
-        return Response(payload, status=status.HTTP_200_OK)
+		return Response(payload, status=status.HTTP_200_OK)
 
 class SeasonInfo(APIView):
-    
-    def get(self, request, format=None):
-        
-        tmdb_id = request.query_params.get('id')
-        season_number = request.query_params.get('season_number')
-        
-        if not (tmdb_id or season_number):
-            return Response({"detail": "id or season_number must not be empty"},
-                            status=status.HTTP_400_BAD_REQUEST)
+	
+	def get(self, request, format=None):
+		
+		tmdb_id = request.query_params.get('id')
+		season_number = request.query_params.get('season_number')
+		
+		if not (tmdb_id or season_number):
+			return Response({"detail": "id or season_number must not be empty"},
+							status=status.HTTP_400_BAD_REQUEST)
 
-        params = { 'api_key': os.getenv('TMDB_KEY') }
-        
-        url = f'{TMDB_API_ENDPOINT}/tv/{tmdb_id}/season/{season_number}?{urlencode(params)}'
-        response = requests.get(url)
-        
-        if response.status_code != 200:
-            return Response({"detail": "external endpoint died"},
-                            status=status.HTTP_404_NOT_FOUND)
-        
-        data = response.json()
-        
-        payload = {k: data[k] for k in (
-            'air_date', 'name', 'overview', 'id', 'season_number', 'vote_average'
-        )}
-        
-        payload['title'] = data['name']
-        payload['episodes'] = [{k: v for k, v in ep.items() if k not in ('crew', 'guest_stars')}
-                               for ep in data['episodes']]
+		params = { 'api_key': os.getenv('TMDB_KEY') }
+		
+		url = f'{TMDB_API_ENDPOINT}/tv/{tmdb_id}/season/{season_number}?{urlencode(params)}'
+		response = requests.get(url)
+		
+		if response.status_code != 200:
+			return Response({"detail": "external endpoint died"},
+							status=status.HTTP_404_NOT_FOUND)
+		
+		data = response.json()
+		
+		payload = {k: data[k] for k in (
+			'air_date', 'name', 'overview', 'id', 'season_number', 'vote_average'
+		)}
+		
+		payload['title'] = data['name']
+		payload['episodes'] = [{k: v for k, v in ep.items() if k not in ('crew', 'guest_stars')}
+							   for ep in data['episodes']]
 
-        for i, ep in enumerate(payload['episodes']):
-            payload['episodes'][i]['still_path'] = TMDB_IMAGE_PATH + ep['still_path'] \
-                if ep.get('still_path') else DEFAULT_POSTER_PATH
+		for i, ep in enumerate(payload['episodes']):
+			payload['episodes'][i]['still_path'] = TMDB_IMAGE_PATH + ep['still_path'] \
+				if ep.get('still_path') else DEFAULT_POSTER_PATH
 
-            payload['episodes'][i]['title'] = ep['name']
-            del payload['episodes'][i]['name']
-        
-        return Response(payload, status=status.HTTP_200_OK)
+			payload['episodes'][i]['title'] = ep['name']
+			del payload['episodes'][i]['name']
+		
+		return Response(payload, status=status.HTTP_200_OK)
+
+# TODO: Make LLM prioritise entries with english subtitles
+# TODO: Only include entries with >= certain amount of seeders
+
+class FindMovieTorrentFile(APIView):
+	
+	TORRENT_API_ENDPOINT = 'https://torrent-api-py-nx0x.onrender.com/api/v1/search'
+	
+	ALLOWED_SITES = [
+		'yts', # movies only
+	]
+
+	example_input = {
+		'titles': [
+			'title 1',
+			'title 2',
+			'title 3',
+			'title 4',
+			'title 5',
+			],
+		'target': 'target title',
+	}
+	
+	example_output = { 'title': 'selected title' }
+	
+	prompt = f"""
+		You are a title matcher that will perform the following task:\n
+		Given a list of titles and a target, select one title from the list that best matches the target title.\n
+		If there are no titles that match the target, set the title as an empty string.\n
+		The Input JSON will use the schema: {json.dumps(example_input, indent=2)}\n
+		The Output JSON object must use the schema: {json.dumps(example_output, indent=2)}\n
+		"""
+	
+	def get(self, request, format=None):
+		
+		client = Groq(api_key=os.environ.get("GROQ_KEY"))
+		name = request.query_params.get('name')
+		site = request.query_params.get('site')
+		
+		def matchTitles(titles):
+			
+			prompt_input = {
+				'titles': titles,
+				'target': name
+			}
+			
+			cc = client.chat.completions.create(
+				messages=[
+					{
+						"role": "system",
+						"content": self.prompt
+					},
+					{
+						"role": "user",
+						"content": f"Select the title that best matches the target."
+						f"Input: {json.dumps(prompt_input, indent=2)}",
+					},
+				],
+				model="llama-3.3-70b-versatile",
+				response_format={'type': "json_object"}
+			)
+
+			return json.loads(cc.choices[0].message.content)
+		
+		if (name or site) is None:
+			return Response({"detail": "name, site must not be empty"},
+							status=status.HTTP_400_BAD_REQUEST)
+		
+		if site not in self.ALLOWED_SITES:
+			return Response({"detail": "site must be one of the allowed sites"},
+							status=status.HTTP_400_BAD_REQUEST)
+		
+		page = 1
+		total_pages = None
+		result = {}
+		
+		while True:
+			
+			if total_pages is not None and page > total_pages:
+				break
+			
+			print(f"Trying page {page}")
+			
+			# query torrent api
+			params = {
+				'site': site,
+				'query': f'{name}',
+				'page': page,
+			}
+			
+			response = requests.get(f"{self.TORRENT_API_ENDPOINT}?{urlencode(params)}")
+			
+			data = response.json()
+			
+			if data.get('error') is not None:
+				return Response({"detail": data['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+			
+			if not total_pages:
+				total_pages = data.get('total_pages')
+			
+			# match titles with LLM
+			prompt_output = matchTitles([entry['name'] for entry in data['data']])
+			
+			if (prompt_output.get('title', '') != ''):
+				
+				print("Found: ", prompt_output)
+				
+				for entry in data['data']:
+					if entry['name'] == prompt_output['title']:
+						result = entry
+						break
+				
+				break
+			
+			page += 1
+
+		print("Entry: ", result)
+		
+		return Response(result, status=status.HTTP_200_OK)
+
+class FindTVTorrentFile(APIView):
+	
+	TORRENT_API_ENDPOINT = 'https://torrent-api-py-nx0x.onrender.com/api/v1/search'
+	
+	ALLOWED_SITES = [
+		'nyaasi', # anime only
+		'piratebay' # english / other tv series
+	]
+	
+	example_input = {
+		'titles': [
+			'title 1',
+			'title 2',
+			'title 3',
+			'title 4',
+			'title 5',
+			],
+		'target': {
+			'name': 'show name',
+			'season': 'season number',
+			'episode': 'episode number'
+		}
+	}
+			
+	example_output = { 'title': 'selected title' }
+	
+	prompt = f"""
+		You are a title matcher that will perform the following task:\n
+		Given a list of titles and a target, select one title from the list that best matches the target show name, season number and episode number.\n
+		If there are no titles that match the target, set the title as an empty string.\n
+		The Input JSON will use the schema: {json.dumps(example_input, indent=2)}\n
+		The Output JSON object must use the schema: {json.dumps(example_output, indent=2)}\n
+		"""
+	
+	def get(self, request, format=None):
+		
+		client = Groq(api_key=os.environ.get("GROQ_KEY"))
+		name = request.query_params.get('name')
+		season_num = request.query_params.get('season')
+		episode_num = request.query_params.get('episode')
+		site = request.query_params.get('site')
+		
+		def matchTitles(titles):
+			
+			prompt_input = {
+				'titles': titles,
+				'target': {
+					'name': name,
+					'season': season_num,
+					'episode': episode_num
+				}
+			}
+			
+			cc = client.chat.completions.create(
+				messages=[
+					{
+						"role": "system",
+						"content": self.prompt
+					},
+					{
+						"role": "user",
+						"content": f"Select the title that best matches the target."
+						f"Input: {json.dumps(prompt_input, indent=2)}",
+					},
+				],
+				model="llama-3.3-70b-versatile",
+				response_format={'type': "json_object"}
+			)
+
+			return json.loads(cc.choices[0].message.content)
+		
+		if (name or season_num or episode_num or site) is None:
+			return Response({"detail": "show_name, sesaon, episode are required parameters"},
+							status=status.HTTP_400_BAD_REQUEST)
+		
+		if site not in self.ALLOWED_SITES:
+			return Response({"detail": "site must be one of the allowed sites"},
+							status=status.HTTP_400_BAD_REQUEST)
+		
+		page = 1
+		total_pages = None
+		result = {}
+		
+		while True:
+			
+			if total_pages is not None and page > total_pages:
+				break
+			
+			print(f"Trying page {page}")
+			
+			# query torrent api
+			params = {
+				'site': site,
+				'query': f'{name} S {season_num}',
+				'page': page,
+			}
+			
+			response = requests.get(f"{self.TORRENT_API_ENDPOINT}?{urlencode(params)}")
+			
+			data = response.json()
+			
+			if data.get('error') is not None:
+				return Response({"detail": data['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+			
+			if not total_pages:
+				total_pages = data.get('total_pages')
+			
+			# match titles with LLM
+			prompt_output = matchTitles([entry['name'] for entry in data['data']])
+			
+			if (prompt_output.get('title', '') != ''):
+				
+				print("Found: ", prompt_output)
+				
+				for entry in data['data']:
+					if entry['name'] == prompt_output['title']:
+						result = entry
+						break
+				
+				break
+			
+			page += 1
+
+		print("Entry: ", result)
+		
+		return Response(result, status=status.HTTP_200_OK)
+
+class FromTMDB(APIView):
+	
+	"""
+	Tries to query the database for a video with the corresponding tmdb id and type.
+	If the video is found, provide the details for the frontend to call a seperate API endpoint that torrents / serves the video.
+	If the video is not found, create a new record in the database.
+	"""
+	
+	def get(self, request, format=None):
+		
+		tmdb_id = request.query_params.get('tmdb_id')
+		type = request.query_params.get('type')
+		
+		if not tmdb_id or not type:
+			return Response({"detail": "tmdb_id and type are required parameters"},
+							status=status.HTTP_400_BAD_REQUEST)
+		
+		if type not in ['movie', 'tv']:
+			return Response({"detail": "type must only be movie or tv"},
+							status=status.HTTP_400_BAD_REQUEST)
+		
+		video, created = Video.objects.get_or_create(tmdb_id=tmdb_id, type=type)
+		
+		if created:
+			print(f"Created new entry for tmdb id {tmdb_id}")
+	
+		return Response({"video_id": video.id, "created": created},
+						status=status.HTTP_200_OK)
+
+
+class StreamVideo(APIView):
+	
+	"""
+	Uses the database ID and serves the corresponding video.
+	If the video is not found, torrent and serve at the same time.
+	If the video is found, serve the video.
+	"""
+	
+	def get(self, request, format=None):
+		
+		video_id = request.query_params.get('id')
+		
+		if not video_id:
+			return Response({"detail": "id is a required parameter"},
+							status=status.HTTP_400_BAD_REQUEST)
+		
+		try:
+			video = Video.objects.get(pk=video_id)
+		except Video.DoesNotExist:
+			return Response({"detail": "No video with provided id"},
+							status=status.HTTP_404_NOT_FOUND)
+		
+		if video.torrent is None:
+			
+			# torrent and serve
+			pass
+			
+		else:
+			
+			# serve
+			pass
+		
+		return Response({"detail": "temp dummy response"},
+						status=status.HTTP_200_OK)

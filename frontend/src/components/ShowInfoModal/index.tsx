@@ -47,7 +47,10 @@ function Episode({ info } : { info: EpisodeInfo }) {
   const handleClick = () => {
     setSearchQuery('')
     setIsOpen(false)
-    router.push(`/watch/${info.id}`)
+
+    fetch(`http://localhost:8000/api/videos/fromTMDB?tmdb_id=${info.id}&type=tv`).then((resp) => {
+      if (resp.ok) resp.json().then((data) => router.push(`/watch/${data.video_id}`))
+    }).catch((error) => console.error(error))
   }
 
   return (
@@ -75,7 +78,10 @@ function Movie({info}: { info: FullInfo}) {
   const handleClick = () => {
     setSearchQuery('')
     setIsOpen(false)
-    router.push(`/watch/${info.id}`)
+
+    fetch(`http://localhost:8000/api/videos/fromTMDB?tmdb_id=${info.id}&type=movie`).then((resp) => {
+      if (resp.ok) resp.json().then((data) => router.push(`/watch/${data.video_id}`))
+    }).catch((error) => console.error(error))
   }
 
   return (
