@@ -49,6 +49,15 @@ export default function Home() {
         alert('peer stream')
       });
 
+      peer.on('close', () => {
+        alert('remote peer close')
+      })
+
+      peer.on('error', (e) => {
+        alert('remote peer error')
+        console.log(e.code)
+      })
+
       // TODO: add a message handler for datachannel.
 
       connectionRef.current = peer;
