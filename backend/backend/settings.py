@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'django_crontab',
  
 	'app_users',
     'video',
@@ -85,6 +86,11 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+#cronjobs
+CRONJOBS = [
+    ('* * * * *', 'backend.cron.clean_videos', '>> ' + os.path.join('/tmp/clean_videos' + ' 2>&1 '))
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'

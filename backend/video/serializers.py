@@ -2,6 +2,7 @@ import json
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 
 from .models import Video, Comment
 from app_users.models import AppUser
@@ -14,6 +15,8 @@ class VideoSerializer(serializers.Serializer):
 	watched_by = serializers.PrimaryKeyRelatedField(queryset=AppUser.objects.all(), many=True, required=False)	
 	tmdb_id = serializers.IntegerField(required=True)
 	type = serializers.CharField(max_length=5, required=True) # movie or tv
+	last_watched_time = serializers.DateTimeField(default=timezone.now)
+
 
 	def create(self, validated_data):
 		# NOTE: NOT NULL constraint failed: video_video.torrent_id
@@ -27,6 +30,7 @@ class VideoSerializer(serializers.Serializer):
 		instance.watched_by = validated_data.get('watched_by', instance.watched_by)
 		instance.tmdb_id = validated_data.get('tmdb_id', instance.tmdb_id)
 		instance.type = validated_data.get('type', instance.type)
+		instance.last_watched_time = validated_data.get('last_watched_time', instance.last_watched_time)
 
 		instance.save()
 		return instance
