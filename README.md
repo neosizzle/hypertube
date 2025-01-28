@@ -1,5 +1,65 @@
 # /dev/log for hypertube
-> sumary TODO
+Personal movie / anime streaming site where the content are obtained via bittorrent protocol built with nextjs and django.
+
+## Design, Demo and screenshots
+> User is able to create an account with their email or a third party app
+
+> Discover screen inspired by netflix
+
+> Video streaming in action
+
+> Comment section for videos
+
+## BitTorrent protocol
+This protocol is well known for peer-to-peer file sharing, and the documentation can be found [here](https://wiki.theory.org/BitTorrentSpecification) and [here](https://www.bittorrent.org/beps/bep_0003.html). This re-iteration of the procol in this writeup is to further abstract the protocol, making it easier for future reference.
+
+Every node / machine in the network is considered a peer. A peer can be a seeder (file uploader) or a leecher (file downloader) depending on what they want to acheive in the network. 
+
+### The torrent file
+The .torrent file or Metainfo file is a file that contains information on the underlying file to download such as the length, filename, hash, pieces, piece length and so on.
+
+> NOTE: A piece here refers to a part of the actual files content. The `pieces` property in the .torrent file is the result of **concatnation** of the hashes of the specific parts of files, not the hash of the actual file itself. `piece length` is just a number of how big a piece should be
+
+> NOTE: A piece length is usually a power of 2 number, so the final piece may contain extra number of bytes from the actual file. what in trying to say here is that the bytes in the actual file is not exactly divisible by the fixed length pieces as defined in the .torrent file
+
+The .torrent file also contains information about its announce URL of its tracker(s), which will be an important information for file acquisition.
+
+For leechers, the .torrent file is the first step to downloading files. They can acquire this file from a public database or shared from friends or family.
+
+For seeders, the generation of the .torrent file is the last step of sharing files to the network.
+
+### The tracker
+The tracker is an HTTP over TCP/UDP service that keeps tracks of what peers have what files. Leechers will query trackers to get a list of peers to download from and seeders will query to a tracker to add itself as a peer for a certain file. 
+
+The query to trackers is also known as **announce** requests. Periodically, clients would make **announce** request to update the tracker on the state of the current upload / download. The trackers
+will maintain their record internally for all of the announce requests receive.
+
+The **announce** request will contain information about the number of bytes uploaded / downloaded and the number of bytes left in the upload / download. For leechers, it also accepts information on how many peers would the leecher like to expect from the response of the query. 
+
+The response will contain information such as as number of seeders / leechers, as well as a list of peers the leechers can start downloading from.
+
+The tracker will also support a `/scrape` endpoint which just shows the current status for any given torrent.
+
+There are some public trackers [out there](http://www.torrent2exe.com/forum/viewtopic.php?id=153), however you can also deploy your own tracker for the same purposes as long the convention is followed strictly.
+
+### Download messaging
+Once the peers are determined, the leecher can initiate the download by sending messages to the peer using formatted messages.
+
+The sequence starts with a handshake, and the leecher will send request messages requesting for data, the peer will then response with piece messages containing raw bytes of the requested file. The full protocol can be viewed [here](https://wiki.theory.org/BitTorrentSpecification) under section Peer wire protocol (TCP).
+
+## Video streaming
+The previous sections described the acquisition of the video file, the following processes will involve the delivery part of the service, where we still stream the video source to the client.
+
+Though the requirements specify that we need to use WebRTC, my persoal opinion thinks that using RTMP is a better option, considering the former is used mainly for realtime video calls optimizing processing speed with the cost of quality over the latter which is optimized for high quality streaming in exchange for slower processing speed.
+
+Below is the video streaming flow we have implemented with a simple websocket server as the signalling server. 
+(TODO add picture here)
+
+## FFmpeg conversion
+
+## External search APIs
+
+## i18n
 
 ## Requirements
 
@@ -110,3 +170,6 @@ To set up the backend, follow these steps:
     This will start the Django development server. By default, the admin page will be available at `http://127.0.0.1:8000/admin`.
 
     - If you're using a different configuration (e.g., Docker or a custom port), be sure to adjust the command accordingly.
+
+
+## Suggested improvements
