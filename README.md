@@ -53,7 +53,7 @@ The previous sections described the acquisition of the video file, the following
 Though the requirements specify that we need to use WebRTC, my persoal opinion thinks that using RTMP is a better option, considering the former is used mainly for realtime video calls optimizing processing speed with the cost of quality over the latter which is optimized for high quality streaming in exchange for slower processing speed.
 
 Below is the video streaming flow we have implemented with a simple websocket server as the signalling server. 
-(TODO add picture here)
+![image](https://raw.githubusercontent.com/neosizzle/hypertube/refs/heads/main/docs/rtc-flow.png)
 
 ## FFmpeg conversion
 
