@@ -228,6 +228,7 @@ class Torrent:
             >>> torrent = await Torrent("magnet:...").wait_for('finished')
         """
         while not getattr(self, status):
+            # print(f"waiting for {status} but got {self.status}")
             await asyncio.sleep(1)
 
     def __iter__(self):

@@ -29,11 +29,11 @@ export default function Home() {
         // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
         const data_str = JSON.stringify(data)
         if (!connectedStateRef.current)
-          socket.send(`pass|handshake|${data_str}|asd|asd|asd`)
+          socket.send(`pass|handshake|${data_str}|VNASA|asd|asd|asd|sad`)
 
         // for ack video, 'data will contain ack message
         else
-          socket.send(`pass|video|${data_str}|asd|asd|adas`)
+          socket.send(`pass|video|${data_str}|asd|asd|ada|asd`)
 
         alert(`peer signal, connected? ${connectedStateRef.current}`)
       });

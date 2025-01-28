@@ -9,9 +9,9 @@ from torrent import TorrentSession
 
 import os
 import asyncio
-import websockets
 import json
-import time 
+import requests
+import zipfile
 
 from app_users.models import Session
 
@@ -39,6 +39,31 @@ def object_to_string(obj):
         message = {"type": "bye"}
     return json.dumps(message, sort_keys=True)
 
+# function to convert SRT subtitle files into VTT subtitle file. 
+# VTT format is required for web render. Thnaks ChatGPT
+def srt_to_vtt(srt_file, vtt_file):
+    # Open the SRT file for reading and the VTT file for writing
+    with open(srt_file, 'r', encoding='utf-8') as srt, open(vtt_file, 'w', encoding='utf-8') as vtt:
+        # Write the VTT header
+        vtt.write('WEBVTT\n\n')
+
+        # Read through each line of the SRT file
+        srt_content = srt.read()
+        subtitle_blocks = srt_content.strip().split('\n\n')
+        
+        for block in subtitle_blocks:
+            lines = block.split('\n')
+            
+            # The first line is the subtitle number (ignore it)
+            # The second line is the timestamp, we need to convert it
+            timestamp = lines[1]
+            timestamp = timestamp.replace(',', '.')  # Change comma to dot for VTT format
+            
+            # The remaining lines are the subtitles
+            subtitle_text = '\n'.join(lines[2:])
+            
+            # Write the converted timestamp and subtitle to the VTT file
+            vtt.write(f"{timestamp}\n{subtitle_text}\n\n")
 
 def get_session_user_and_time(token):
     try:
@@ -48,9 +73,35 @@ def get_session_user_and_time(token):
         return None
 
 # Messaging RFC:
-# token|type|payload1|payload2|payload3|payload4
-# NOTE: payload needs to have 6 elements
+# token|type|payload1|payload2|payload3|payload4|payload5|payload6
+# NOTE: payload needs to have 8 elements
 # type must be handshake | video | bye
+
+# Convention for type 'handshake'
+# payload1 - RTC handshake data
+#
+# payload2 - Availability flag
+# Allowed values : VASA, VNASNA, VNASA, VASNA
+# Explanation: VASA - Video Available Subtitle Available
+#              VNASNA - Video NotAvailable Subtitle NotAvailable 
+#              VNASA - VideoNotAvailable Subtitle Available
+#              VASNA - Video Available Subtitle NotAvailable
+#
+# payload3 - Video File name (for VA- flags) OR magnet link (for VNA- flags)
+# NOTE: Video file name is derived from Video.Torrent.file_name. The signalling service
+#       will build the full path based on MEDIA_ROOT server setting
+#
+# payload4 - Subscene subtitle download link (for -SNA flags) OR blank value
+# NOTE: The signalling service will call a GET request to the link provided
+#
+# payload5 - File Format Requirement
+# Allowed values - mp4, mkv
+#
+# payload6 - IMDB id
+# NOTE: this is used when saving subtitles and mp4 torrents into disk
+
+# Convention for type 'video'
+# payload1 - RTC handshake data
 
 _global = []
 some_state = [0]
@@ -58,7 +109,7 @@ lock = asyncio.Lock()
 # async with lock:
 
 ACCEPTED_MSG_TYPES = ["handshake", "video", "ping"]
-
+ACCEPTED_FLAGS = ["VASA", "VNASNA", "VNASA", "VASNA"]
 # 1 new connection will create 1 new consumer
 class SignalConsumer(AsyncConsumer):
 
@@ -66,7 +117,8 @@ class SignalConsumer(AsyncConsumer):
         self.rtc_client = [None] # list here to prevent GC from freeing the rtcclient object prematurely
         self.local_background_tasks = set()
         self.lock = asyncio.Lock()
-        self.current_media = None
+        self.current_torrenting_media = None
+        self.subtitle_download_done = None
         super().__init__(*args, **kwargs)
         
     async def websocket_connect(self, event):
@@ -85,10 +137,10 @@ class SignalConsumer(AsyncConsumer):
             i += 1
 
     # takes a magnet link as input
-    async def stream_torrent(self, magnet_link):
+    async def stream_torrent(self, magnet_link, imdb_id):
         # Create a session, and add a torrent
         session = TorrentSession()
-        save_path = os.path.join(settings.MEDIA_ROOT, 'torrents/')
+        save_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{imdb_id}.mp4')
         with session.add_torrent(magnet_link=magnet_link, remove_after=False, save_path=save_path) as torrent:
             # Force sequential mode - data arrives in sequence, required for streaming
             torrent.sequential(True)
@@ -99,11 +151,53 @@ class SignalConsumer(AsyncConsumer):
                 media = next(a for a in torrent
                              if a.is_media and not 'sample' in a.path.lower())
                 async with self.lock:
-                    self.current_media = media
+                    self.current_torrenting_media = media
+
                 # only exit when media is 100% completed
                 await asyncio.gather(media.wait_for_completion(100))
             except StopIteration:
                 raise Exception('Could not find a playable source')
+            
+    # takes a subscene download link as input, will set 
+    # self.subtitle_download_done once file is ready to read from disk.
+    async def stream_subtitle(self, download_link, imdb_id):
+        self.subtitle_download_done = False
+        save_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}.zip')
+        extract_folder = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}/')
+        extract_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}.srt')
+        convert_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}.vtt')
+        response = requests.get(download_link)
+        if response.status_code != 200:
+            print(f"Subtitle download failed wtih code {response.status_code}")
+            return
+        
+        # write to zip file
+        with open(save_path, 'wb') as f:
+            f.write(response.content)
+
+        with zipfile.ZipFile(save_path, 'r') as zip_ref:
+            # get the .srt filename
+            file_name = zip_ref.namelist()[0]
+            
+            # extract the contents of the zip file into a folder
+            # this is an unecassary indirection, but i lazy to optimize
+            zip_ref.extract(file_name, extract_folder)
+            
+            # Rename the extracted filr
+            old_file_path = os.path.join(extract_folder, file_name)
+            new_file_path = extract_path
+            os.rename(old_file_path, new_file_path)
+
+            #conversion from srt to vtt
+            srt_to_vtt(extract_path, convert_path)
+
+            # delete intermediate files
+            os.rmdir(extract_folder)
+            os.remove(zip_ref.filename)
+            os.remove(extract_path)
+
+        self.subtitle_download_done = True
+        return
     
     async def websocket_disconnect(self, event):
         raise StopConsumer
@@ -112,15 +206,18 @@ class SignalConsumer(AsyncConsumer):
         data_sections = event['text'].split('|')
 
         # check for valid RFC section count
-        if len(data_sections) != 6:
+        if len(data_sections) != 8:
             await self.send({
-            "type": "websocket.close",
-            "reason": f"Invalid message formatting: received only {len(data_sections)} sections",
-            "code": 3003
+                "type": "websocket.send",
+                "text": f"{token}|error|Invalid message formatting: received only {len(data_sections)} sections",
+            })
+            await self.send({
+                "type": "websocket.close",
+                "code": 3003
             })
             return
 
-        # check for validid against database
+        # check for valid id against database
         # backdoor for test, userid == 'pass'
         token = data_sections[0]
         user = None
@@ -128,8 +225,11 @@ class SignalConsumer(AsyncConsumer):
             user_and_time_pair = await database_sync_to_async(get_session_user_and_time)(token)
             if user_and_time_pair is None or user_and_time_pair[0] > timezone.now():
                 await self.send({
+                "type": "websocket.send",
+                "text": f"{token}|error|Invalid token",
+                })
+                await self.send({
                 "type": "websocket.close",
-                "reason": f"Invalid token",
                 "code": 3000
                 })
                 return
@@ -139,8 +239,11 @@ class SignalConsumer(AsyncConsumer):
         msg_type = data_sections[1]
         if msg_type not in ACCEPTED_MSG_TYPES:
             await self.send({
+                "type": "websocket.send",
+                "text": f"{token}|error|Invalid message type: {msg_type}",
+            })
+            await self.send({
             "type": "websocket.close",
-            "reason": f"Invalid message type: {msg_type}",
             "code": 3003
             })
             return
@@ -149,6 +252,20 @@ class SignalConsumer(AsyncConsumer):
         # handle handshake type
         if msg_type == "handshake":
             handshake_data = data_sections[2]
+            flags = data_sections[3]
+
+            # validate flags are accepted
+            if flags not in ACCEPTED_FLAGS:
+                await self.send({
+                    "type": "websocket.send",
+                    "text": f"{token}|error|Invalid flags: {flags}",
+                })
+                await self.send({
+                    "type": "websocket.close",
+                    "code": 3003
+                    })
+                return
+
             # create new rtc client
             pc = RTCPeerConnection()
             
@@ -173,44 +290,67 @@ class SignalConsumer(AsyncConsumer):
             # this can do for now.
             await asyncio.sleep(0.5)
 
-            # TODO check if we really need to torrent. If we dont, set current_media 
-            # to the video file which we already have
-            # TODO specify torrent details in handshake payload
-            magnet = "magnet:?xt=urn:btih:59756CEF987CD5E06E4293E2CF3AF3AA71AD193A&dn=Aussie.Gold.Hunters.S10E01.WEBRip.x264-skorpion&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2F9.rarbg.to%3A2710%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.uw0.xyz%3A6969%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.tiny-vps.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.si%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.cyberia.is%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.kamigami.org%3A2710%2Fannounce&tr=udp%3A%2F%2Fopentor.org%3A2710%2Fannounce%5B%2Ffo&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.zerobytes.xyz%3A1337%2Fannounce&tr=udp%3A%2F%2Faaa.army%3A8866%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=http%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcoppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.zer0day.to%3A1337%2Fannounce"
-            task = asyncio.create_task(self.stream_torrent(magnet))
-            self.local_background_tasks.add(task)
-            task.add_done_callback(self.local_background_tasks.discard)
+            # check video not available flag
+            media_file_path = None
+            if "VNA" in flags:
+                # magnet = data_sections[4]
+                # imdb_id = data_sections[7]
+                imdb_id = 69420
+                magnet = "magnet:?xt=urn:btih:59756CEF987CD5E06E4293E2CF3AF3AA71AD193A&dn=Aussie.Gold.Hunters.S10E01.WEBRip.x264-skorpion&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2F9.rarbg.to%3A2710%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.uw0.xyz%3A6969%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.tiny-vps.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.si%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.cyberia.is%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.kamigami.org%3A2710%2Fannounce&tr=udp%3A%2F%2Fopentor.org%3A2710%2Fannounce%5B%2Ffo&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.zerobytes.xyz%3A1337%2Fannounce&tr=udp%3A%2F%2Faaa.army%3A8866%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=http%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcoppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.zer0day.to%3A1337%2Fannounce"
+                task = asyncio.create_task(self.stream_torrent(magnet, imdb_id))
+                self.local_background_tasks.add(task)
+                task.add_done_callback(self.local_background_tasks.discard)
 
-            # keep waiting until current media is ready
-            # TODO: Add abort timeout perhaps?
-            while True:
-                await asyncio.sleep(5)
-                async with lock:
-                    if self.current_media != None:
-                        print(f"MEDIA {self.current_media.path} init, waiting for 20%")
+                # keep waiting until current media is ready
+                # TODO: Add abort timeout perhaps?
+                while True:
+                    await asyncio.sleep(5)
+                    async with lock:
+                        if self.current_torrenting_media != None:
+                            media_file_path = self.current_torrenting_media.path
+                            break
+                        else :
+                            print("still waiting for media torrent to start...")
 
-                        # wait until the download is finiished at least 20%
-                        await self.current_media.wait_for_completion(20)
+            if "VA" in flags:
+                media_file_path = data_sections[4]
 
-                        file_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{self.current_media.path}')
-                        player = MediaPlayer(file_path, loop=True)
-                        if player and player.audio:
-                            pc.addTrack(player.audio)
+            if "SNA" in flags:
+                # imdb_id = data_sections[7]
+                # download_link = data_sections[5]
+                download_link = "https://sub-scene.com/download/3353927"
+                imdb_id = 69420
+                task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id))
+                self.local_background_tasks.add(task)
+                task.add_done_callback(self.local_background_tasks.discard)
 
-                        if player and player.video:
-                            pc.addTrack(player.video)
-                        
-                        # create new offer to negotiate video codec
-                        # https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
-                        await pc.setLocalDescription(await pc.createOffer())
-                        nego_to_send = object_to_string(pc.localDescription)         
-                        await self.send({
-                            "type": "websocket.send",
-                            "text": f"{token}|video|{nego_to_send}",
-                        }) # NOTE: use datachannel here?
-                        break
-                    else :
-                        print("still waiting for media to not be none...")
+
+            # wait for video download to be at least 20% and subtitles fully processed
+            if self.subtitle_download_done != None:
+                await asyncio.sleep(0.5)
+                print("SUBTITLE waiting for completion")
+
+            if self.current_torrenting_media != None:
+                print(f"MEDIA {self.current_torrenting_media.path} init, waiting for 20%")
+                # wait until the download is finiished at least 20%
+                await self.current_torrenting_media.wait_for_completion(20)
+
+            file_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
+            player = MediaPlayer(file_path, loop=True)
+            if player and player.audio:
+                pc.addTrack(player.audio)
+
+            if player and player.video:
+                pc.addTrack(player.video)
+            
+            # create new offer to negotiate video codec
+            # https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
+            await pc.setLocalDescription(await pc.createOffer())
+            nego_to_send = object_to_string(pc.localDescription)         
+            await self.send({
+                "type": "websocket.send",
+                "text": f"{token}|video|{nego_to_send}",
+            }) # NOTE: use datachannel here?
 
             # add client to member refrence
             self.rtc_client[0] = pc
