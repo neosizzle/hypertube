@@ -55,9 +55,11 @@ Though the requirements specify that we need to use WebRTC, my persoal opinion t
 Below is the video streaming flow we have implemented with a simple websocket server as the signalling server. 
 ![image](https://raw.githubusercontent.com/neosizzle/hypertube/refs/heads/main/docs/rtc-flow.png)
 
-## FFmpeg conversion
+## Mkv conversion
+The mp4 files are converted to mkv on the fly using [ffmpeg-python](https://github.com/kkroening/ffmpeg-python), a ffmpeg wrapper for python. 
 
 ## External search APIs
+To facilitate the discovery feature, we offloaded the search function to two external APIs, [OMDB](https://www.omdbapi.com) and [TMDB](https://developer.themoviedb.org/reference/intro/getting-started). Both of these offer search and filter functions, however we use OMDB as our source of truth and the TMDB acts as a backup complementing the contents which OMDB is lacking. OMDB results will always be the priority in the case of a conflict.
 
 ## i18n
 
@@ -65,6 +67,7 @@ Below is the video streaming flow we have implemented with a simple websocket se
 
 - **Node.js**: v20.10.0 or compatible
 - **Python**: v3.10 or compatible
+- **ffmpeg** v4.4.2
 
 ## Environment
 ### Node.js Installation

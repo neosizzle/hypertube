@@ -12,7 +12,7 @@ import asyncio
 import json
 import requests
 import zipfile
-
+import ffmpeg
 from app_users.models import Session
 
 BYE = object()
@@ -73,8 +73,8 @@ def get_session_user_and_time(token):
         return None
 
 # Messaging RFC:
-# token|type|payload1|payload2|payload3|payload4|payload5|payload6
-# NOTE: payload needs to have 8 elements
+# token|type|payload1|payload2|payload3|payload4|payload5|payload6|payload7
+# NOTE: payload needs to have 9 elements
 # type must be handshake | video | bye
 
 # Convention for type 'handshake'
@@ -99,6 +99,9 @@ def get_session_user_and_time(token):
 #
 # payload6 - IMDB id
 # NOTE: this is used when saving subtitles and mp4 torrents into disk
+#
+# payload7 - Video size in WIDGTHxHEIGHT or blank
+#
 
 # Convention for type 'video'
 # payload1 - RTC handshake data
@@ -202,11 +205,12 @@ class SignalConsumer(AsyncConsumer):
     async def websocket_disconnect(self, event):
         raise StopConsumer
 
+    # TODO error handling 
     async def websocket_receive(self, event):
         data_sections = event['text'].split('|')
 
         # check for valid RFC section count
-        if len(data_sections) != 8:
+        if len(data_sections) != 9:
             await self.send({
                 "type": "websocket.send",
                 "text": f"{token}|error|Invalid message formatting: received only {len(data_sections)} sections",
@@ -315,6 +319,7 @@ class SignalConsumer(AsyncConsumer):
             if "VA" in flags:
                 media_file_path = data_sections[4]
 
+            # TODO test this
             if "SNA" in flags:
                 # imdb_id = data_sections[7]
                 # download_link = data_sections[5]
@@ -325,18 +330,42 @@ class SignalConsumer(AsyncConsumer):
                 task.add_done_callback(self.local_background_tasks.discard)
 
 
-            # wait for video download to be at least 20% and subtitles fully processed
+            # wait for subtitles fully processed
             if self.subtitle_download_done != None:
                 await asyncio.sleep(0.5)
                 print("SUBTITLE waiting for completion")
 
+            # wait for video to be at least 20% done
             if self.current_torrenting_media != None:
                 print(f"MEDIA {self.current_torrenting_media.path} init, waiting for 20%")
                 # wait until the download is finiished at least 20%
                 await self.current_torrenting_media.wait_for_completion(20)
 
+            # if the conversion flag is to mkv is set. If it is, start converion process
+            # and wait for the conversion process until the output file exists (?)
+            # TODO test this
+            conversion = data_sections[5]
+            if conversion == "mkv":
+                mp4_path = media_file_path
+                name, ext = os.path.splitext(mp4_path)
+                out_name = name + ".mkv"
+
+                task = asyncio.create_task(ffmpeg.input(mp4_path).output(out_name).run(quiet=True))
+                self.local_background_tasks.add(task)
+                task.add_done_callback(self.local_background_tasks.discard)
+
+                while not os.path.exists(out_name):
+                    await asyncio.sleep(3)
+                    print(f"FFMPEG waiting for mkv conversion to finish")
+                media_file_path = out_name
+
             file_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
+            
             player = MediaPlayer(file_path, loop=True)
+            video_size = data_sections[8]
+            if video_size != '':
+                player = MediaPlayer(file_path, loop=True, options={'video_size': video_size})
+            
             if player and player.audio:
                 pc.addTrack(player.audio)
 
