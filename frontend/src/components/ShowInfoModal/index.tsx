@@ -110,7 +110,11 @@ function Credits({info}: { info: FullInfo}) {
     const map: { [key: string]: string[] } = {}
 
     data.forEach((c) => {
-      (c.known_for_department in map) ? map[c.known_for_department].push(c.name) : map[c.known_for_department] = [c.name]
+      if (c.known_for_department in map) {
+        map[c.known_for_department].push(c.name)
+      } else {
+        map[c.known_for_department] = [c.name]
+      }
     })
 
     return (map)

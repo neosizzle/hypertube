@@ -34,7 +34,7 @@ export default function Users() {
         setUserNotFound(true)
       }
     }).catch((error) => console.log(error))
-  }, [])
+  }, [id])
 
   // TODO: Finish watched videos
 

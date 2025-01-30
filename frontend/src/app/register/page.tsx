@@ -72,7 +72,7 @@ function RegisterCard() {
     })
   }
 
-  useEffect(() => { if (success) router.push('/login') }, [success])
+  useEffect(() => { if (success) router.push('/login') }, [success, router])
 
   return (
     <div className="flex flex-col w-3/4 md:w-1/2 lg:w-2/5 xl:w-1/4 h-[29rem] lg:h-[40rem] bg-gradient-to-br from-purple-200 to-[#9EFCFF]

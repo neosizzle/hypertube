@@ -71,7 +71,7 @@ function Search() {
     if (pathname.startsWith('/search')) return
     if (isOpen) document.addEventListener("mousedown", handleClickOutside)
     return () => { document.removeEventListener("mousedown", handleClickOutside) }
-  }, [ref, isOpen])
+  }, [ref, isOpen, pathname, setIsOpen])
 
   // preserve focus
   useEffect(() => { if (inputRef.current) inputRef.current.focus() }, [inputRef])
@@ -85,7 +85,7 @@ function Search() {
     } else if (isOpen) {
       router.push('/browse')
     }
-  }, [isSearching])
+  }, [isSearching, router, isOpen])
 
   return (
     <div className="flex flex-row w-32 lg:w-64 h-10 justify-end items-center overflow-hidden" ref={ref}>
@@ -177,7 +177,7 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
 export default function Header() {
   
   const router = useRouter()
-  const { searchQuery, setSearchQuery, isOpen, setIsOpen } = useContext(SearchContext);
+  const { setSearchQuery, setIsOpen } = useContext(SearchContext);
   const [profilePicURL, setProfilePicURL] = useState('http://localhost:8000/media/profile_pics/default.png')
   const [login, setLogin] = useState(true)
   const t = useTranslations('Header')

@@ -93,14 +93,19 @@ function ResetPasswordCard() {
         password: pwInput.current?.value
       }),
     }).then((data) => {
-      !data.ok ? data.json().then((obj) => { setErrorMsg(obj[Object.keys(obj)[0]])}) : setSuccess(true)
+
+      if (!data.ok) {
+        data.json().then((obj) => { setErrorMsg(obj[Object.keys(obj)[0]]) })
+      } else {
+        setSuccess(true)
+      }
     }).catch((error) => {
       console.error(error)
     })
 
   }
 
-  useEffect(() => { if (success === true) router.push('/reset/success') }, [success])
+  useEffect(() => { if (success === true) router.push('/reset/success') }, [success, router])
   
   return (
     <div className="flex flex-col w-3/4 md:w-1/2 lg:w-2/5 xl:w-1/4 h-[29rem] lg:h-[40rem] bg-gradient-to-br from-purple-200 to-[#9EFCFF]
