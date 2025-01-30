@@ -9,7 +9,7 @@ export default function Home() {
 
   useEffect(() => {
     router.push('/browse')
-  }, [])
+  }, [router])
 
   return (
     <div className="h-screen w-screen bg-white space-y-4 text-black"></div>

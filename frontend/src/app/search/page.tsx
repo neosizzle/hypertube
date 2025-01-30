@@ -21,7 +21,7 @@ const parseDate = (dateString: string) => {
 export default function Search() {
   
   // search
-  const { searchQuery, setSearchQuery } = useContext(SearchContext);
+  const { searchQuery } = useContext(SearchContext);
 
   // modal & content
   const [openModal, setOpenModal] = useState(false)
@@ -48,7 +48,7 @@ export default function Search() {
   const t = useTranslations('SearchPage')
   
   // debounce search query
-  useEffect(() => setDebounceQuery(searchQuery), [debounce])
+  useEffect(() => setDebounceQuery(searchQuery), [debounce]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // search api call
   useEffect(() => {

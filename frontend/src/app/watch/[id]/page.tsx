@@ -6,8 +6,6 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { motion } from "motion/react"
 import Image from "next/image"
-import { Comme } from "next/font/google"
-import { json } from "stream/consumers"
 
 const enter = {
   opacity: 1,
@@ -58,7 +56,7 @@ function CommentInput({ videoID, profilePicURL, isLoggedIn, onSuccess }: { video
       setSuccess(false)
     }
 
-  }, [success])
+  }, [success, onSuccess])
 
   return (
     <div className="flex flex-row space-x-4 px-4">
@@ -121,7 +119,6 @@ function Comment({ comment }: { comment: Comment }) {
 
 function CommentSection({ videoID }: {videoID : string}) {
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userID, setUserID] = useState('')
   const [profilePicURL, setProfilePicURL] = useState('http://localhost:8000/media/profile_pics/default.png')
   const [comments, setComments] = useState([])
@@ -146,12 +143,10 @@ function CommentSection({ videoID }: {videoID : string}) {
           console.log(JSON.stringify(json))
           setUserID(json.id)
           setProfilePicURL(`http://localhost:8000` + json.profile_picture)
+          getComments()
         })
       }
     })
-
-    getComments()
-
   }, [])
 
   return (

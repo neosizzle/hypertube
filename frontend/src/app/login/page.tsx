@@ -187,7 +187,7 @@ export default function Login() {
   
   useEffect(() => {
     if (success) router.push('/browse')
-    }, [success])
+    }, [success, router])
 
   return (
     <div className="flex flex-col h-screen w-screen bg-white items-center justify-center space-y-4">

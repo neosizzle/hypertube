@@ -7,10 +7,7 @@ import { motion } from "motion/react";
 import Image from "next/image"
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
-import { locales } from "../../i18n/config"
 import { useTranslations } from "next-intl";
-import { setUserLocale } from "@/services/locale";
 import LocaleSelector from "@/components/LocaleSelector";
 
 const enter = {
@@ -53,8 +50,12 @@ function DeleteAccountConfirmationModal({ open, onClose }: { open: boolean, onCl
   }, [])
 
   useEffect(() => {
-    (username === confirmUsername && declaration === 'delete my account') ? setEnableDelete(true) : setEnableDelete(false)
-  }, [confirmUsername, declaration])
+    if (username === confirmUsername && declaration === 'delete my account') {
+      setEnableDelete(true)
+    } else {
+      setEnableDelete(false)
+    }
+  }, [confirmUsername, declaration, username])
 
   const deleteAccount = () => {
 
@@ -85,7 +86,7 @@ function DeleteAccountConfirmationModal({ open, onClose }: { open: boolean, onCl
             onPaste={(e) => e.preventDefault()}/>
           </div>
           <div className="space-y-1">
-            <div className="text-black font-bold">To verify, type 'delete my account' below:</div>
+            <div className="text-black font-bold">To verify, type &#39;delete my account&#39; below:</div>
             <input className="w-full h-8 lg:h-12 bg-white rounded-lg p-2 
             text-black text-xs lg:text-base border border-slate-400"
             onInput={(e) => setDeclaration(e.currentTarget.value)}
@@ -106,16 +107,13 @@ function DeleteAccountConfirmationModal({ open, onClose }: { open: boolean, onCl
 
 export default function Account() {
 
-  const locale_t = useTranslations('Locales')
   const c = useTranslations('Common')
   const t = useTranslations('AccountPage')
-
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [lastName, setLastName] = useState('')
   const [firstName, setFirstName] = useState('')
   const [profilePicURL, setProfilePicURL] = useState('')
-
   const [isEdit, setEdit] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [updateSuccess, setUpdateSuccess] = useState(false)
@@ -140,16 +138,16 @@ export default function Account() {
   }, [])
 
   const uploadImage = () => {
-    let fileUpload = document.createElement('input')
+    const fileUpload = document.createElement('input')
     fileUpload.type = 'file';
 
     fileUpload.onchange = (event) => {
     
-      let target = event.target as HTMLInputElement;
+      const target = event.target as HTMLInputElement;
       if (!target || !target.files)
         return
 
-      let file = target.files[0]
+      const file = target.files[0]
 
       if (file.size >= 10 * 1024 * 1024)
       {
@@ -157,7 +155,7 @@ export default function Account() {
         return
       }
 
-      let formData = new FormData()
+      const formData = new FormData()
       formData.append('image', file)
 
       fetch('http://localhost:8000/api/users/picture', {
@@ -212,24 +210,6 @@ export default function Account() {
           setErrorMsg(formatJSONKey(key) + ": " + msg)
         })
       }
-    }).catch((error) => {
-      console.error(error);
-    })
-  }
-
-  const changeLanguage = (newLocale: string) => {
-
-    fetch('http://localhost:8000/api/users/me', {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        lang: newLocale
-      })
-    }).then((resp) => {
-      if (resp.ok) setUserLocale(newLocale)
     }).catch((error) => {
       console.error(error);
     })
