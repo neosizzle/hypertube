@@ -91,8 +91,10 @@ def get_session_user_and_time(token):
 # NOTE: Video file name is derived from Video.Torrent.file_name. The signalling service
 #       will build the full path based on MEDIA_ROOT server setting
 #
-# payload4 - Subscene subtitle download link (for -SNA flags) OR blank value
+# payload4 - Subscene subtitle download link (for -SNA flags) followed by an '@' and the language OR blank value
 # NOTE: The signalling service will call a GET request to the link provided
+# NOTE: the language paraeter is used for file saving purposes only
+# EXAMPLE: https://sub-scene.com/download/3353927@EN
 #
 # payload5 - File Format Requirement
 # Allowed values - mp4, mkv
@@ -159,19 +161,19 @@ class SignalConsumer(AsyncConsumer):
                 # only exit when media is 100% completed
                 await asyncio.gather(media.wait_for_completion(100))
             except StopIteration:
-                raise Exception('Could not find a playable source')
+                print("ERROR [stream_torrent] Could not find a playable source'")
             
     # takes a subscene download link as input, will set 
     # self.subtitle_download_done once file is ready to read from disk.
-    async def stream_subtitle(self, download_link, imdb_id):
+    async def stream_subtitle(self, download_link, imdb_id, lang):
         self.subtitle_download_done = False
         save_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}.zip')
         extract_folder = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}/')
         extract_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}.srt')
-        convert_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}.vtt')
+        convert_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}{lang}.vtt')
         response = requests.get(download_link)
         if response.status_code != 200:
-            print(f"Subtitle download failed wtih code {response.status_code}")
+            print(f"ERROR [stream_subtitle] Subtitle download failed wtih code {response.status_code}")
             return
         
         # write to zip file
@@ -208,6 +210,15 @@ class SignalConsumer(AsyncConsumer):
     # TODO error handling 
     async def websocket_receive(self, event):
         data_sections = event['text'].split('|')
+        token = None
+        try:
+            token = data_sections[0]
+        except Exception as e :
+            await self.send({
+                "type": "websocket.send",
+                "text": f"pass|error|{e}",
+            })
+            return
 
         # check for valid RFC section count
         if len(data_sections) != 9:
@@ -223,7 +234,6 @@ class SignalConsumer(AsyncConsumer):
 
         # check for valid id against database
         # backdoor for test, userid == 'pass'
-        token = data_sections[0]
         user = None
         if token != "pass":
             user_and_time_pair = await database_sync_to_async(get_session_user_and_time)(token)
@@ -306,15 +316,22 @@ class SignalConsumer(AsyncConsumer):
                 task.add_done_callback(self.local_background_tasks.discard)
 
                 # keep waiting until current media is ready
-                # TODO: Add abort timeout perhaps?
+                time_left = 20
                 while True:
                     await asyncio.sleep(5)
+                    time_left -= 1
                     async with lock:
                         if self.current_torrenting_media != None:
                             media_file_path = self.current_torrenting_media.path
                             break
                         else :
-                            print("still waiting for media torrent to start...")
+                            if time_left == 0:
+                                await self.send({
+                                    "type": "websocket.send",
+                                    "text": f"{token}|error|Timeout when downloading metadata",
+                                })
+                                return
+                            print(f"still waiting for media torrent to start.. timeout in {time_left * 5} seconds")
 
             if "VA" in flags:
                 media_file_path = data_sections[4]
@@ -322,10 +339,11 @@ class SignalConsumer(AsyncConsumer):
             # TODO test this
             if "SNA" in flags:
                 # imdb_id = data_sections[7]
-                # download_link = data_sections[5]
-                download_link = "https://sub-scene.com/download/3353927"
+                # download_link_w_lang = data_sections[5]
+                download_link_w_lang = "https://sub-scene.com/download/3353927@EN"
+                download_link,lang = download_link_w_lang.split('@')
                 imdb_id = 69420
-                task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id))
+                task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
                 self.local_background_tasks.add(task)
                 task.add_done_callback(self.local_background_tasks.discard)
 

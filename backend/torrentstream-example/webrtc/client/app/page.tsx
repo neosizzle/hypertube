@@ -29,7 +29,7 @@ export default function Home() {
         // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
         const data_str = JSON.stringify(data)
         if (!connectedStateRef.current)
-          socket.send(`pass|handshake|${data_str}|VNASA|videoanme|subscne|mp4|imdb_id|1234x500`)
+          socket.send(`pass|handshake|${data_str}|VNASA|videoanme|subscne|mp4|imdb_id|`)
 
         // for ack video, 'data will contain ack message
         else

@@ -61,6 +61,8 @@ The mp4 files are converted to mkv on the fly using [ffmpeg-python](https://gith
 ## External search APIs
 To facilitate the discovery feature, we offloaded the search function to two external APIs, [OMDB](https://www.omdbapi.com) and [TMDB](https://developer.themoviedb.org/reference/intro/getting-started). Both of these offer search and filter functions, however we use OMDB as our source of truth and the TMDB acts as a backup complementing the contents which OMDB is lacking. OMDB results will always be the priority in the case of a conflict.
 
+## Torrent file matching 
+
 ## i18n
 
 ## Requirements
