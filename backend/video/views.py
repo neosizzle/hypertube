@@ -22,7 +22,7 @@ from logging import info, error
 
 load_dotenv()
 
-from .models import Video, Comment, Torrent
+from .models import Video, Comment
 from .serializers import VideoSerializer, CommentSerializer
 
 class VideoList(APIView):
@@ -31,15 +31,9 @@ class VideoList(APIView):
 	def get(self, request, format=None):
 		# NOTE: Dont need ot handle sorting right...?
 		name = request.query_params.get('name', "")
-		min_rating = request.query_params.get('min_rating', '0')
-
-		try:
-			min_rating = int(min_rating)
-		except ValueError:
-			return Response({"detail": "min_rating must be an integer."}, status=status.HTTP_400_BAD_REQUEST)
 
 		# filter data
-		videos = Video.objects.filter(name__startswith=name, rating__gte=min_rating).order_by('name')
+		videos = Video.objects.filter(name__startswith=name).order_by('name')
 		
 		# paginate data
 		paginator = LimitOffsetPagination()
@@ -60,10 +54,27 @@ class VideoList(APIView):
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class VideoDetail(APIView):
+	def patch(self, request, pk):
+		video = None
+		try:
+			video = Video.objects.get(pk=pk)
+		except Video.DoesNotExist:
+			return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+		except Exception as e:
+			error(e)
+			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+		
+		serializer = VideoSerializer(video, data=request.data, partial=True)
+		if serializer.is_valid():
+			serializer.save()
+			return Response(serializer.data)
+
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 	def get(self, request, pk, format=None):
 		try:
 			video = Video.objects.get(pk=pk)
 			serializer = VideoSerializer(video)
+			print(f"{serializer.data}")
 			return Response(serializer.data)
 		except Video.DoesNotExist:
 			return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -129,7 +140,6 @@ class AllComments(APIView):
 		serializer = CommentSerializer(paginated_comments, many=True)
 
 		return p.get_paginated_response(serializer.data)
-
 
 class CommentByID(APIView):
 
@@ -624,7 +634,8 @@ class FromTMDB(APIView):
 	If the video is found, provide the details for the frontend to call a seperate API endpoint that torrents / serves the video.
 	If the video is not found, create a new record in the database.
 	"""
-	
+
+	# Note: I think this is 	
 	def get(self, request, format=None):
 		
 		tmdb_id = request.query_params.get('tmdb_id')
@@ -645,7 +656,6 @@ class FromTMDB(APIView):
 	
 		return Response({"video_id": video.id, "created": created},
 						status=status.HTTP_200_OK)
-
 
 class StreamVideo(APIView):
 	
@@ -669,15 +679,15 @@ class StreamVideo(APIView):
 			return Response({"detail": "No video with provided id"},
 							status=status.HTTP_404_NOT_FOUND)
 		
-		if video.torrent is None:
+		# if video.torrent is None:
 			
-			# torrent and serve
-			pass
+		# 	# torrent and serve
+		# 	pass
 			
-		else:
+		# else:
 			
-			# serve
-			pass
+		# 	# serve
+		# 	pass
 		
 		return Response({"detail": "temp dummy response"},
 						status=status.HTTP_200_OK)

@@ -12,6 +12,7 @@ class AuthMiddleware:
 		("POST", r"^/api/auth/otp$"),
 		("POST", r"^/api/auth/reset$"),
 		("GET", r"^/api/videos$"),
+		("GET", r"^/api/videos/\d+$"),
 		("GET", r"^/api/videos/comments/\d+$"),
 		("GET", r"^/api/comments$"),
 		("GET", r"^/api/comments/all$"),

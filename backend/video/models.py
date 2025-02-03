@@ -3,14 +3,13 @@ from app_users.models import AppUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
-class Torrent(models.Model):
-	file_name = models.CharField(max_length=100, unique=True, default="")
 
 class Video(models.Model):
-	torrent = models.ForeignKey(Torrent, on_delete=models.CASCADE, related_name='torrent', null=True)
+	torrent_file_name = models.CharField(max_length=100, unique=True, default="")
 	name = models.CharField(max_length=100, unique=True)
 	overview = models.CharField(max_length=1000)
-	subtitle = models.FileField(upload_to='subtitles/', null=True, blank=True, default='subtitles/default.png')
+	en_sub_file_name = models.CharField(max_length=100, unique=True, default="")
+	bm_sub_file_name = models.CharField(max_length=100, unique=True, default="")
 	watched_by = models.ManyToManyField(AppUser, blank=True, related_name='watched_videos') # why is this not in users model? to prevent circular import since user model imports this model
 	tmdb_id = models.IntegerField()
 	type = models.CharField(max_length=5) # movie or tv

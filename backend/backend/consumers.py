@@ -204,6 +204,17 @@ class SignalConsumer(AsyncConsumer):
         self.subtitle_download_done = True
         return
     
+    async def mp4_to_mkv(self, mp4_path, out_name, token):
+        try:
+            await asyncio.to_thread(ffmpeg.input(mp4_path).output(out_name, y=None).run, quiet=True)
+        except Exception as e:
+            print(e)
+            await self.send({
+                    "type": "websocket.send",
+                    "text": f"{token}|error|{e}",
+                })
+            return
+
     async def websocket_disconnect(self, event):
         raise StopConsumer
 
@@ -336,7 +347,6 @@ class SignalConsumer(AsyncConsumer):
             if "VA" in flags:
                 media_file_path = data_sections[4]
 
-            # TODO test this
             if "SNA" in flags:
                 # imdb_id = data_sections[7]
                 # download_link_w_lang = data_sections[5]
@@ -361,25 +371,35 @@ class SignalConsumer(AsyncConsumer):
 
             # if the conversion flag is to mkv is set. If it is, start converion process
             # and wait for the conversion process until the output file exists (?)
-            # TODO test this
-            conversion = data_sections[5]
+            conversion = data_sections[6]
             if conversion == "mkv":
-                mp4_path = media_file_path
+                mp4_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
                 name, ext = os.path.splitext(mp4_path)
                 out_name = name + ".mkv"
 
-                task = asyncio.create_task(ffmpeg.input(mp4_path).output(out_name).run(quiet=True))
+                task = asyncio.create_task(self.mp4_to_mkv(mp4_path, out_name, token))
                 self.local_background_tasks.add(task)
                 task.add_done_callback(self.local_background_tasks.discard)
 
+                # NOTE: wait for conversion to at least complete header. bad practice for arb wait here
+                # TODO: implement dynamic progress checking. (Low priority)
+                await asyncio.sleep(5)
                 while not os.path.exists(out_name):
-                    await asyncio.sleep(3)
+                    await asyncio.sleep(1)
                     print(f"FFMPEG waiting for mkv conversion to finish")
-                media_file_path = out_name
+                media_file_path = os.path.splitext(media_file_path)[0] + ".mkv"
 
+            # TODO: add check for video not found
             file_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
+
+            if not os.path.exists(file_path):
+                await self.send({
+                    "type": "websocket.send",
+                    "text": f"{token}|error|{file_path} not found in media",
+                })
+                return
             
-            player = MediaPlayer(file_path, loop=True)
+            player = MediaPlayer(file_path)
             video_size = data_sections[8]
             if video_size != '':
                 player = MediaPlayer(file_path, loop=True, options={'video_size': video_size})
