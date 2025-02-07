@@ -389,7 +389,6 @@ class SignalConsumer(AsyncConsumer):
                     print(f"FFMPEG waiting for mkv conversion to finish")
                 media_file_path = os.path.splitext(media_file_path)[0] + ".mkv"
 
-            # TODO: add check for video not found
             file_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
 
             if not os.path.exists(file_path):

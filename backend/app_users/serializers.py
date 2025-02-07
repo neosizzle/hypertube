@@ -1,18 +1,26 @@
-import bcrypt
+import re
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-
+from django.core.exceptions import ValidationError
 
 from .models import AppUser
 from video.serializers import VideoSerializer
 
+def PasswordValidator(value):
+	res = re.match('^(?=\S{7,}$)(?=.*?\d)(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[^A-Za-z\s0-9])', value)
+	if res is None:
+		raise ValidationError('Password needs to be at least 7 characters, include 1 digit, include 1 upper, include 1 lower and 1 special character')
+	return value
+
+
+	
 class AppUserSerializer(serializers.Serializer):
 	id = serializers.IntegerField(read_only=True)
 	username = serializers.CharField(required=True, max_length=100, validators=[UniqueValidator(queryset=AppUser.objects.all())])
 	first_name = serializers.CharField(required=False, max_length=100)
 	last_name = serializers.CharField(required=False, max_length=100)
 	email = serializers.EmailField(required=False, max_length=255, validators=[UniqueValidator(queryset=AppUser.objects.all())])
-	password = serializers.CharField(required=False, max_length=255, min_length=7) # TODO make this more secure
+	password = serializers.CharField(required=False, max_length=255, validators=[PasswordValidator])
 	ft_iden = serializers.CharField(required=False, max_length=100)
 	discord_iden = serializers.CharField(required=False, max_length=100)
 	github_iden = serializers.CharField(required=False, max_length=100)
@@ -32,7 +40,6 @@ class AppUserSerializer(serializers.Serializer):
 		"""
 		return AppUser.objects.create(**validated_data)
 
-	# TODO: support update oauth creds if needed
 	# NOTE: profile picture is not editable by serializer
 	def update(self, instance, validated_data):
 		"""
