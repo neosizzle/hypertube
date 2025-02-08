@@ -1,24 +1,18 @@
 import json
 import os
 import requests
-import time
-from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework import status
 from urllib.parse import urlencode
-from secrets import token_urlsafe
-from django.shortcuts import redirect
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-from PIL import Image
 from dotenv import load_dotenv
-import yagmail
+import re
+import urllib.parse
 from datetime import datetime
 from groq import Groq
 
-from logging import info, error
+from logging import error
 
 load_dotenv()
 
@@ -26,8 +20,6 @@ from .models import Video, Comment
 from .serializers import VideoSerializer, CommentSerializer
 
 class VideoList(APIView):
-	# NOTE should search external sources be done by frontend and this endpoint only list downloaded videos?
-	# TODO: add search- filters and pagination
 	def get(self, request, format=None):
 		# NOTE: Dont need ot handle sorting right...?
 		name = request.query_params.get('name', "")
@@ -418,9 +410,40 @@ class FindMovieTorrentFile(APIView):
 		client = Groq(api_key=os.environ.get("GROQ_KEY"))
 		name = request.query_params.get('name')
 		site = request.query_params.get('site')
-		
-		def matchTitles(titles):
+
+		def parse_size(size_str):
+			size_match = re.match(r'(\d+(\.\d+)?)\s*(B|KB|MB|GB|TB)', size_str.strip().upper())
 			
+			if not size_match:
+				raise ValueError(f"Invalid size format {size_str}")
+
+			size, _, unit = size_match.groups()
+			size = float(size)
+			
+			# Conversion factors
+			unit_factors = {
+				'B': 1,
+				'KB': 1024,
+				'MB': 1024 ** 2,
+				'GB': 1024 ** 3,
+				'TB': 1024 ** 4
+			}
+
+			return size * unit_factors[unit]
+
+		def find_healthy_torrent(torrents_list):
+			HEALTH_CHECK_ENDPOINT = "https://checker.openwebtorrent.com/check"
+			for torrent in torrents_list:
+				response = requests.get(f"{HEALTH_CHECK_ENDPOINT}?magnet={urllib.parse.quote_plus(torrent['magnet'])}")
+				response.raise_for_status()
+				data = response.json()
+				seeds = data.get('seeds')
+				peers = data.get('peers')
+				if seeds != None and peers != None and seeds > 0 and peers > 0:
+					return torrent
+			return None
+
+		def matchTitles(titles):
 			prompt_input = {
 				'titles': titles,
 				'target': name
@@ -449,15 +472,15 @@ class FindMovieTorrentFile(APIView):
 							status=status.HTTP_400_BAD_REQUEST)
 		
 		if site not in self.ALLOWED_SITES:
-			return Response({"detail": "site must be one of the allowed sites"},
+			return Response({"detail": f"site must be one of the allowed sites {self.ALLOWED_SITES}"},
 							status=status.HTTP_400_BAD_REQUEST)
 		
 		page = 1
 		total_pages = None
 		result = {}
-		
-		while True:
-			
+		found_valid_magnet = False
+
+		while not found_valid_magnet:
 			if total_pages is not None and page > total_pages:
 				break
 			
@@ -471,42 +494,66 @@ class FindMovieTorrentFile(APIView):
 			}
 			
 			response = requests.get(f"{self.TORRENT_API_ENDPOINT}?{urlencode(params)}")
-			
 			data = response.json()
 			
 			if data.get('error') is not None:
 				return Response({"detail": data['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 			
 			if not total_pages:
-				total_pages = data.get('total_pages')
-			
+				# NOTE: no way to get total pages when using yts, hardcode to 20
+				# In the event of total_pages being too big and `page` overflows
+				# the loop will just continue and result will be empty
+				total_pages = 20
+
 			# match titles with LLM
-			prompt_output = matchTitles([entry['name'] for entry in data['data']])
-			
-			if (prompt_output.get('title', '') != ''):
+			page_titles = [entry['name'] for entry in data['data']]
+			while len(page_titles) > 0:
+				prompt_output = matchTitles(page_titles)
 				
-				print("Found: ", prompt_output)
+				# LLM found a suitable title
+				if (prompt_output.get('title', '') != ''):
+					result_to_check = None
+
+					for entry in data['data']:
+						# get actual torrent info result from torrent API
+						if entry['name'] == prompt_output['title']:
+							result_to_check = entry
+							break
 				
-				for entry in data['data']:
-					if entry['name'] == prompt_output['title']:
-						result = entry
+					# we have magnet links, time to choose a healthy one
+					torrents = sorted(result_to_check['torrents'], key = lambda x: parse_size(x['size'])) # sort by size, prioritize smaller files of the same movie
+					valid_torrent = find_healthy_torrent(torrents)
+
+					# found healthy, set found_valid magnet, result and break
+					if valid_torrent != None:
+						found_valid_magnet = True
+						result_to_check['torrents'] = [valid_torrent]
+						result = result_to_check
 						break
+
+					# no healthy, remove from page_titles and retry
+					page_titles.remove(prompt_output['title'])
+					continue
 				
+				# LLM thinks these titles are all shit, move on to next page
 				break
 			
 			page += 1
 
-		print("Entry: ", result)
-		
+		# print("Entry: ", result)
+		if result == {}:
+			return Response(result, status=status.HTTP_404_NOT_FOUND)
 		return Response(result, status=status.HTTP_200_OK)
 
 class FindTVTorrentFile(APIView):
 	
 	TORRENT_API_ENDPOINT = 'https://torrent-api-py-nx0x.onrender.com/api/v1/search'
 	
+	# NOTE: KEPADA PIHAK POLIS DIRAJA MALAYSIA, PROJEK INI HANYA DIGUNAKAN
+	# UNTUK TUJUAN PEMBELAJARAN SAHAJA
 	ALLOWED_SITES = [
 		'nyaasi', # anime only
-		'piratebay' # english / other tv series
+		'piratebay' # english / other tv series 
 	]
 	
 	example_input = {
@@ -570,21 +617,21 @@ class FindTVTorrentFile(APIView):
 			)
 
 			return json.loads(cc.choices[0].message.content)
-		
-		if (name or season_num or episode_num or site) is None:
-			return Response({"detail": "show_name, sesaon, episode are required parameters"},
+
+		if name is None or season_num is None or episode_num is None or site is None:
+			return Response({"detail": "name, sesaon, episode are required parameters"},
 							status=status.HTTP_400_BAD_REQUEST)
 		
 		if site not in self.ALLOWED_SITES:
-			return Response({"detail": "site must be one of the allowed sites"},
+			return Response({"detail": f"site must be one of the allowed sites {self.ALLOWED_SITES}"},
 							status=status.HTTP_400_BAD_REQUEST)
 		
 		page = 1
 		total_pages = None
 		result = {}
+		found_valid_magnet = False
 		
-		while True:
-			
+		while not found_valid_magnet:
 			if total_pages is not None and page > total_pages:
 				break
 			
@@ -593,12 +640,12 @@ class FindTVTorrentFile(APIView):
 			# query torrent api
 			params = {
 				'site': site,
-				'query': f'{name} S {season_num}',
+				'query': f'{name} S{season_num}',
 				'page': page,
 			}
 			
+			print(f"{self.TORRENT_API_ENDPOINT}?{urlencode(params)}")
 			response = requests.get(f"{self.TORRENT_API_ENDPOINT}?{urlencode(params)}")
-			
 			data = response.json()
 			
 			if data.get('error') is not None:
@@ -606,25 +653,42 @@ class FindTVTorrentFile(APIView):
 			
 			if not total_pages:
 				total_pages = data.get('total_pages')
-			
+
 			# match titles with LLM
-			prompt_output = matchTitles([entry['name'] for entry in data['data']])
-			
-			if (prompt_output.get('title', '') != ''):
+			page_titles = [entry['name'] for entry in data['data']]
+			while len(page_titles) > 0:
+				prompt_output = matchTitles(page_titles)
 				
-				print("Found: ", prompt_output)
-				
-				for entry in data['data']:
-					if entry['name'] == prompt_output['title']:
-						result = entry
+				# LLM found a suitable title
+				if (prompt_output.get('title', '') != ''):
+					result_to_check = None	
+
+					for entry in data['data']:
+						# get actual torrent info result from torrent API
+						if entry['name'] == prompt_output['title']:
+							result_to_check = entry
+							break
+					
+					# we have 1 magnet link, see if its healthy
+					# NOTE: nyaasi and piratebay has similar schema, can geneneralize deserialization here
+					num_seeders = result_to_check.get("seeders")
+					if num_seeders != None and int(num_seeders) > 0:
+						result = result_to_check
+						found_valid_magnet = True
 						break
-				
+					
+					# No healthy, remove page titles and retry
+					# NOTE: for shows with episodes, what would happen here? in LAIAN we trust
+					page_titles.remove(prompt_output['title'])
+					continue
+
+				# LLM thinks these titles are all shit, move on to next page
 				break
 			
 			page += 1
 
-		print("Entry: ", result)
-		
+		if result == {}:
+			return Response(result, status=status.HTTP_404_NOT_FOUND)
 		return Response(result, status=status.HTTP_200_OK)
 
 class FromTMDB(APIView):
@@ -655,39 +719,4 @@ class FromTMDB(APIView):
 			print(f"Created new entry for tmdb id {tmdb_id}")
 	
 		return Response({"video_id": video.id, "created": created},
-						status=status.HTTP_200_OK)
-
-class StreamVideo(APIView):
-	
-	"""
-	Uses the database ID and serves the corresponding video.
-	If the video is not found, torrent and serve at the same time.
-	If the video is found, serve the video.
-	"""
-	
-	def get(self, request, format=None):
-		
-		video_id = request.query_params.get('id')
-		
-		if not video_id:
-			return Response({"detail": "id is a required parameter"},
-							status=status.HTTP_400_BAD_REQUEST)
-		
-		try:
-			video = Video.objects.get(pk=video_id)
-		except Video.DoesNotExist:
-			return Response({"detail": "No video with provided id"},
-							status=status.HTTP_404_NOT_FOUND)
-		
-		# if video.torrent is None:
-			
-		# 	# torrent and serve
-		# 	pass
-			
-		# else:
-			
-		# 	# serve
-		# 	pass
-		
-		return Response({"detail": "temp dummy response"},
 						status=status.HTTP_200_OK)

@@ -11,8 +11,8 @@ class VideoSerializer(serializers.Serializer):
 	id = serializers.IntegerField(read_only=True)
 	name = serializers.CharField(max_length=100, validators=[UniqueValidator(queryset=Video.objects.all())])
 	overview = serializers.CharField(max_length=1000)
-	en_sub_file_name = serializers.CharField(max_length=100, read_only=True)
-	bm_sub_file_name = serializers.CharField(max_length=100, read_only=True)
+	en_sub_file_name = serializers.CharField(max_length=100)
+	bm_sub_file_name = serializers.CharField(max_length=100)
 	watched_by = serializers.PrimaryKeyRelatedField(queryset=AppUser.objects.all(), many=True, required=False)	
 	tmdb_id = serializers.IntegerField(required=True)
 	type = serializers.CharField(max_length=5, required=True) # movie or tv

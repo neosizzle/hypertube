@@ -5,11 +5,11 @@ from django.utils import timezone
 
 
 class Video(models.Model):
-	torrent_file_name = models.CharField(max_length=100, unique=True, default="")
+	torrent_file_name = models.CharField(max_length=100, default="")
 	name = models.CharField(max_length=100, unique=True)
 	overview = models.CharField(max_length=1000)
-	en_sub_file_name = models.CharField(max_length=100, unique=True, default="")
-	bm_sub_file_name = models.CharField(max_length=100, unique=True, default="")
+	en_sub_file_name = models.CharField(max_length=100, default="")
+	bm_sub_file_name = models.CharField(max_length=100, default="")
 	watched_by = models.ManyToManyField(AppUser, blank=True, related_name='watched_videos') # why is this not in users model? to prevent circular import since user model imports this model
 	tmdb_id = models.IntegerField()
 	type = models.CharField(max_length=5) # movie or tv

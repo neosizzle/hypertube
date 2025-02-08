@@ -42,7 +42,6 @@ urlpatterns = [
     path('api/videos/watched/<int:pk>', video_views.VideoWatchedDetail.as_view()),
     path('api/videos/<int:pk>', video_views.VideoDetail.as_view()),
     path('api/videos/fromTMDB', video_views.FromTMDB.as_view()),
-    path('api/videos/stream', video_views.StreamVideo.as_view()), # NOTE: removable, use RTC from singalling server
     
     # comments
     path('api/videos/comments/<int:pk>', video_views.CommentsByVideo.as_view()),
