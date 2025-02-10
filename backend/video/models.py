@@ -6,7 +6,7 @@ from django.utils import timezone
 
 class Video(models.Model):
 	torrent_file_name = models.CharField(max_length=100, default="")
-	name = models.CharField(max_length=100, unique=True)
+	# name = models.CharField(max_length=100, unique=True)
 	overview = models.CharField(max_length=1000)
 	en_sub_file_name = models.CharField(max_length=100, default="")
 	bm_sub_file_name = models.CharField(max_length=100, default="")

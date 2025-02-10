@@ -177,4 +177,6 @@ To set up the backend, follow these steps:
     - If you're using a different configuration (e.g., Docker or a custom port), be sure to adjust the command accordingly.
 
 
-## Suggested improvements
+## Feature suggestions
+1. Multifile torrents for tv series with multiple episodes
+2. Custom title matching engine for torrent file query

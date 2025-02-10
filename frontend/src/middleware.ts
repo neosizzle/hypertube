@@ -4,7 +4,9 @@ import { NextRequest } from "next/server";
 export const config = {
   matcher: [
     '/account',
-    '/users/:path*'
+    '/users/:path*',
+    '/search',
+    '/watch/:path*'
   ]
 }
 

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { SearchContext } from "@/providers/SearchProvider";
 import { Season } from "@/types/ShowInfo";
 
-function Episode({ info } : { info: EpisodeInfo }) {
+function Episode({ info }: { info: EpisodeInfo }) {
 
   const router = useRouter()
   const { setSearchQuery, setIsOpen } = useContext(SearchContext);
@@ -19,17 +19,17 @@ function Episode({ info } : { info: EpisodeInfo }) {
   };
 
   const getAiringDate = (dateString: string) => {
-    
+
     const date = parseDate(dateString)
     const daysUntil = Math.ceil((date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     const weeksUntil = Math.ceil(daysUntil / 7)
 
     if (daysUntil > 0 && daysUntil <= 7)
-      return ('Airing in ' + daysUntil + ' day' + (daysUntil > 1 ? 's': ''))
+      return ('Airing in ' + daysUntil + ' day' + (daysUntil > 1 ? 's' : ''))
     else if (daysUntil > 7 && daysUntil <= 31)
-      return ('Airing in ' + weeksUntil + ' week' + (weeksUntil > 1 ? 's': ''))
+      return ('Airing in ' + weeksUntil + ' week' + (weeksUntil > 1 ? 's' : ''))
 
-    return ('Airing in ' + parseDate(info.air_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long'}))
+    return ('Airing in ' + parseDate(info.air_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long' }))
   }
 
   const getSubTitle = () => {
@@ -55,10 +55,10 @@ function Episode({ info } : { info: EpisodeInfo }) {
 
   return (
     <button className="w-full flex flex-row px-4 lg:px-4 py-2 lg:py-4 space-x-2 lg:space-x-4 hover:bg-black/10 rounded-lg"
-    onClick={handleClick}>
+      onClick={handleClick}>
       <div className="flex w-3 lg:w-5 justify-center items-center text-md lg:text-2xl text-black">{info.episode_number}</div>
       <Image src={info.still_path} alt={info.title !== '' ? info.title : `Episode ${info.episode_number}`} width={1920} height={1000}
-      className="w-24 lg:w-48 aspect-video object-cover z-0 rounded-lg"/>
+        className="w-24 lg:w-48 aspect-video object-cover z-0 rounded-lg" />
       <div className="text-black flex-col space-y-1 w-[40rem]">
         <div className="flex flex-row justify-between items-center">
           <div className="font-bold text-sm lg:text-lg line-clamp-1 lg:line-clamp-2 text-ellipsis text-left">{info.title !== '' ? info.title : `Episode ${info.episode_number}`}</div>
@@ -70,7 +70,7 @@ function Episode({ info } : { info: EpisodeInfo }) {
   )
 }
 
-function Movie({info}: { info: FullInfo}) {
+function Movie({ info }: { info: FullInfo }) {
 
   const router = useRouter()
   const { setSearchQuery, setIsOpen } = useContext(SearchContext);
@@ -87,13 +87,13 @@ function Movie({info}: { info: FullInfo}) {
   return (
     <div className="px-4 lg:px-12 lg:py-4">
       <button className="w-full flex flex-row space-x-4 hover:bg-black/10 rounded-lg"
-      onClick={handleClick}>
+        onClick={handleClick}>
         <Image src={info.poster_path} alt={info.title} width={1920} height={1000}
-        className="w-24 lg:w-48 aspect-video object-cover z-0 rounded-lg"/>
-          <div className="text-black flex-col space-y-1 w-full">
-            <div className="flex flex-row justify-between items-center">
+          className="w-24 lg:w-48 aspect-video object-cover z-0 rounded-lg" />
+        <div className="text-black flex-col space-y-1 w-full">
+          <div className="flex flex-row justify-between items-center">
             <div className="font-bold text-base lg:text-lg">{'Full Movie'}</div>
-          <div className="text-xs md:text-md lg:text-lg">{(info.details as MovieInfo).runtime + 'm'}</div>
+            <div className="text-xs md:text-md lg:text-lg">{(info.details as MovieInfo).runtime + 'm'}</div>
           </div>
         </div>
       </button>
@@ -103,7 +103,7 @@ function Movie({info}: { info: FullInfo}) {
 
 
 
-function Credits({info}: { info: FullInfo}) {
+function Credits({ info }: { info: FullInfo }) {
 
   const buildCreditsMap = (data: Cast[] | Crew[]) => {
 
@@ -119,7 +119,7 @@ function Credits({info}: { info: FullInfo}) {
 
     return (map)
   }
-  
+
   const castMap = buildCreditsMap(info.credits.cast)
   const crewMap = buildCreditsMap(info.credits.crew)
 
@@ -132,7 +132,7 @@ function Credits({info}: { info: FullInfo}) {
 
 }
 
-function Episodes({info}: { info: FullInfo}) {
+function Episodes({ info }: { info: FullInfo }) {
 
   const [seasonNum, setSeasonNum] = useState((info.details as TVInfo).seasons[0].season_number)
   const [episodes, setEpisodes] = useState<TVSeasonInfo | null>(null)
@@ -150,16 +150,16 @@ function Episodes({info}: { info: FullInfo}) {
       <div className="flex flex-row justify-between items-center px-4 w-full">
         <div className="text-black text-bold text-lg lg:text-3xl">Episodes</div>
         <select className="text-black w-auto h-12 items-center px-2 text-xs md:text-md lg:text-lg bg-transparent hover:bg-black/10 outline-none rounded-lg"
-        onChange={(e) => setSeasonNum(Number(e.target.value))}>
+          onChange={(e) => setSeasonNum(Number(e.target.value))}>
           {
-            (info.details as TVInfo).seasons.map((s: Season, index: Key | null | undefined) =><option key={index} value={s.season_number as number}>{'S' + s.season_number + ': ' + s.name}</option>)
+            (info.details as TVInfo).seasons.map((s: Season, index: Key | null | undefined) => <option key={index} value={s.season_number as number}>{'S' + s.season_number + ': ' + s.name}</option>)
           }
         </select>
       </div>
       <div className="px-4 text-black text-xs md:text-md lg:text-lg">{episodes && episodes.overview}</div>
       <div className="overflow-y-auto w-full">
         {
-          episodes && episodes.episodes.map((e: EpisodeInfo, index: Key | null | undefined) => (<Episode key={index} info={e}/>))
+          episodes && episodes.episodes.map((e: EpisodeInfo, index: Key | null | undefined) => (<Episode key={index} info={e} />))
         }
       </div>
     </div>
@@ -171,47 +171,63 @@ export default function ShowInfoModal({ open, onClose, info }: { open: boolean, 
 
   const ref = useRef<HTMLDivElement>(null)
 
-  if (info === null)
-    return (<></>)
-
   return (
     <Modal open={open}>
       <div
-      className="flex w-screen h-full justify-center items-start"
-      onClick={(e) => (!ref.current?.contains(e.target as Node)) ? onClose() : ''}
+        className="flex w-screen h-full justify-center items-start"
+        onClick={(e) => (!ref.current?.contains(e.target as Node)) ? onClose() : ''}
       >
-      <div className={`flex w-screen h-full justify-center items-start py-12 ${open ? 'overflow-auto' : 'overflow-hidden'}`}>
-        <div className="flex flex-col w-[85%] lg:w-1/2 h-auto pb-8 bg-white rounded-lg " ref={ref}>
-          <div className="w-full aspect-video relative">
-            <Image src={info.backdrop_path} alt={info.title} width={1920} height={1000}
-            className="w-full aspect-video z-0 object-cover rounded-lg"/>
-            <div className="absolute bottom-0 lg:bottom-[5%] px-4 lg:px-12 z-10 text-black font-bold text-xl lg:text-5xl inline-block">{info.title}</div>
-            <div className="absolute top-0 w-full aspect-video z-0 bg-gradient-to-b from-transparent from-40% to-90% to-white rounded-lg" />
-          </div>
-          <div className="space-y-4">
-            <div className="px-4 lg:px-12 text-black text-xs md:text-sm lg:text-md xl:text-lg font-medium">
-              {info.overview}
-            </div>
-            <div className="flex flex-col md:flex-row">
-              <div className="text-xs md:text-md lg:text-lg space-y-1 w-2/3">
-                {info.original_title !== info.title && <div className="px-4 lg:px-12 text-black inline-block">Original Title: {info.original_title}</div>}
-                <div className="px-4 lg:px-12 text-black font-medium">
-                  Genres: {info.genres.map((g) => g.name).join(', ')}
+        {
+          info ?
+            <div className={`flex w-screen h-full justify-center items-start py-12 ${open ? 'overflow-auto' : 'overflow-hidden'}`}>
+              <div className="flex flex-col w-[85%] lg:w-1/2 h-auto pb-8 bg-white rounded-lg " ref={ref}>
+                <div className="w-full aspect-video relative">
+                  <Image src={info.backdrop_path} alt={info.title} width={1920} height={1000}
+                    className="w-full aspect-video z-0 object-cover rounded-lg" />
+                  <div className="absolute bottom-0 lg:bottom-[5%] px-4 lg:px-12 z-10 text-black font-bold text-xl lg:text-5xl inline-block">{info.title}</div>
+                  <div className="absolute top-0 w-full aspect-video z-0 bg-gradient-to-b from-transparent from-40% to-90% to-white rounded-lg" />
                 </div>
-                <Credits info={info}/>
-              </div>
-              <div className="text-xs md:text-md lg:text-lg space-y-1 pt-1 md:pt-0 text-black px-4 md:px-0">
-                <div>Ratings:</div>
-                <div className="flex flex-row items-center space-x-4">
-                  <Image src="/imdb.svg" alt="imdb" width={25} height={25} className="w-5 h-5 lg:w-8 lg:h-8" />
-                  <div>{info.details.imdb_rating} / 10.0</div>
+                <div className="space-y-4">
+                  <div className="px-4 lg:px-12 text-black text-xs md:text-sm lg:text-md xl:text-lg font-medium">
+                    {info.overview}
+                  </div>
+                  <div className="flex flex-col md:flex-row">
+                    <div className="text-xs md:text-md lg:text-lg space-y-1 w-2/3">
+                      {info.original_title !== info.title && <div className="px-4 lg:px-12 text-black inline-block">Original Title: {info.original_title}</div>}
+                      <div className="px-4 lg:px-12 text-black font-medium">
+                        Genres: {info.genres.map((g) => g.name).join(', ')}
+                      </div>
+                      <Credits info={info} />
+                    </div>
+                    <div className="text-xs md:text-md lg:text-lg space-y-1 pt-1 md:pt-0 text-black px-4 md:px-0">
+                      <div>Ratings:</div>
+                      <div className="flex flex-row items-center space-x-4">
+                        <Image src="/imdb.svg" alt="imdb" width={25} height={25} className="w-5 h-5 lg:w-8 lg:h-8" />
+                        <div>{info.details.imdb_rating} / 10.0</div>
+                      </div>
+                    </div>
+                  </div>
+                  {info.type === "tv" ? <Episodes info={info} /> : <Movie info={info} />}
                 </div>
               </div>
+            </div> :
+
+            <div className={`flex w-screen h-full justify-center items-start py-12 ${open ? 'overflow-auto' : 'overflow-hidden'}`}>
+              <div className="flex flex-col w-[85%] lg:w-1/2 h-auto p-8 bg-white rounded-lg " ref={ref}>
+                
+              <div className="max-w-sm animate-pulse">
+                  <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
+                  <div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[360px] mb-2.5"></div>
+                  <div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 mb-2.5"></div>
+                  <div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] mb-2.5"></div>
+                  <div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[300px] mb-2.5"></div>
+                  <div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[360px]"></div>
+              </div>
+
+
+              </div>
             </div>
-            {info.type === "tv" ? <Episodes info={info}/> : <Movie info={info}/>}
-          </div>
-        </div>
-      </div>
+        }
       </div>
     </Modal>
   )

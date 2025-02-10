@@ -88,15 +88,20 @@ export default function Search() {
     }
   }, [isInView, hasMoreData]);
 
+  // TODO: cancel token here to prevent double request
   const handleClickShowCard = (data: ShortInfo) => {
+    setOpenModal(true)
+
     fetch(`http://localhost:8000/api/show/info?id=${data.id}&type=${data.type}`, {
       method: 'GET',
     }).then((resp) => {
       if (resp.ok) resp.json().then((json) => {
         setShowInfo(json)
-        setOpenModal(true)
       })
-    }).catch((error) => console.error(error))
+    }).catch((error) => {
+      console.error(error)
+      setOpenModal(false)
+    })
   }
 
   useEffect(() => {
@@ -158,7 +163,7 @@ export default function Search() {
         <ShowGrid data={filteredResults} handleClickShowCard={handleClickShowCard}/>
         <div ref={scrollTrigger}/>
       </div>
-      <ShowInfoModal open={openModal} onClose={() => setOpenModal(false)} info={showInfo}/>
+      <ShowInfoModal open={openModal} onClose={() => {setOpenModal(false); setShowInfo(null)}} info={showInfo}/>
       <Footer />
     </div>
   )

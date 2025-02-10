@@ -26,7 +26,9 @@ export default function Browse() {
     }).catch((error) => console.error(error))
   }, [])
 
+  // TODO: cancel token here to prevent double request
   const handleClickShowCard = (data: ShortInfo) => {
+    setOpenModal(true)
 
     if (!(data.id in showInfoCache.current)) {
       console.log("Not in cache")
@@ -39,10 +41,12 @@ export default function Browse() {
           setShowInfo(json)
           setOpenModal(true)
         })
-      }).catch((error) => console.error(error))
+      }).catch((error) => {
+        console.error(error)
+        setOpenModal(false)
+      })
     } else {
       setShowInfo(showInfoCache.current[data.id.toString() + data.type])
-      setOpenModal(true)
     }
   }
 
@@ -53,7 +57,7 @@ export default function Browse() {
         <div className="font-bold text-2xl text-black py-4 text-center lg:text-center px-4">{t('popularShows')}</div>
         <ShowGrid data={trending} handleClickShowCard={handleClickShowCard} />
       </div>
-      <ShowInfoModal open={openModal} onClose={() => setOpenModal(false)} info={showInfo}/>
+      <ShowInfoModal open={openModal} onClose={() => {setOpenModal(false); setShowInfo(null)}} info={showInfo}/>
       <Footer />
     </div>
   );

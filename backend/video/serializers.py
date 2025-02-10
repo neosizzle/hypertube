@@ -9,7 +9,7 @@ from app_users.models import AppUser
 
 class VideoSerializer(serializers.Serializer):
 	id = serializers.IntegerField(read_only=True)
-	name = serializers.CharField(max_length=100, validators=[UniqueValidator(queryset=Video.objects.all())])
+	# name = serializers.CharField(max_length=100, validators=[UniqueValidator(queryset=Video.objects.all())])
 	overview = serializers.CharField(max_length=1000)
 	en_sub_file_name = serializers.CharField(max_length=100)
 	bm_sub_file_name = serializers.CharField(max_length=100)
@@ -25,7 +25,7 @@ class VideoSerializer(serializers.Serializer):
 		return Video.objects.create(**validated_data)
 
 	def update(self, instance, validated_data):
-		instance.name = validated_data.get('name', instance.name)
+		# instance.name = validated_data.get('name', instance.name)
 		instance.overview = validated_data.get('overview', instance.name)
 		instance.watched_by = validated_data.get('watched_by', instance.watched_by)
 		instance.tmdb_id = validated_data.get('tmdb_id', instance.tmdb_id)

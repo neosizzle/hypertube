@@ -167,7 +167,6 @@ OMDB_API_ENDPOINT = 'http://www.omdbapi.com/'
 class SearchExternalSource(APIView):
 	
 	def get(self, request, format=None):
-		
 		query = request.query_params.get('query')
 		page = request.query_params.get('page', 1)
 		
@@ -180,10 +179,14 @@ class SearchExternalSource(APIView):
 			'page': page
 		}
 		
-		tv_response = requests.get(f'{TMDB_API_ENDPOINT}/search/tv?{urlencode(params)}')
+		# NOTE: tv shows are disabled due to the current arch not supporting 
+		# multifile torrents, which is what most tv shows do for each episode
+
+		# tv_response = requests.get(f'{TMDB_API_ENDPOINT}/search/tv?{urlencode(params)}')
+		# tv_data = tv_response.json()
+		tv_data = {'results': [], 'total_pages': 0, 'total_results': 0}
+
 		movie_response = requests.get(f'{TMDB_API_ENDPOINT}/search/movie?{urlencode(params)}')
-		
-		tv_data = tv_response.json()
 		movie_data = movie_response.json()
 
 		results = []
@@ -231,6 +234,10 @@ class TrendingShows(APIView):
 			'api_key': os.getenv('TMDB_KEY')
 		}
 		
+		# NOTE: for now, we only support type movie
+		if type != 'movie':
+			return Response({"detail": "type can only be movie"}, status=status.HTTP_400_BAD_REQUEST)
+
 		url = f'{TMDB_API_ENDPOINT}/{type}/popular?{urlencode(params)}'
 
 		response = requests.get(url)
@@ -263,6 +270,10 @@ class ShowInfo(APIView):
 			'append_to_response': 'credits'
 		}
 		
+		# NOTE: for now, only support type movie
+		if type != 'movie':
+			return Response({"detail": "type can only be movie"}, status=status.HTTP_400_BAD_REQUEST)
+
 		url = f'{TMDB_API_ENDPOINT}/{type}/{tmdb_id}?{urlencode(params)}'
 		response = requests.get(url)
 		
@@ -374,8 +385,6 @@ class SeasonInfo(APIView):
 		return Response(payload, status=status.HTTP_200_OK)
 
 # TODO: Make LLM prioritise entries with english subtitles
-# TODO: Only include entries with >= certain amount of seeders
-
 class FindMovieTorrentFile(APIView):
 	
 	TORRENT_API_ENDPOINT = 'https://torrent-api-py-nx0x.onrender.com/api/v1/search'
