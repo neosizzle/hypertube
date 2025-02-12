@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import LocaleSelector from "@/components/LocaleSelector";
+import DimensionSelector from "../../components/DimensionSelector";
 
 const enter = {
   opacity: 1,
@@ -114,6 +115,7 @@ export default function Account() {
   const [lastName, setLastName] = useState('')
   const [firstName, setFirstName] = useState('')
   const [profilePicURL, setProfilePicURL] = useState('')
+  const [preferredDims, setPreferredDims] = useState(1)
   const [isEdit, setEdit] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [updateSuccess, setUpdateSuccess] = useState(false)
@@ -132,6 +134,7 @@ export default function Account() {
           setFirstName(json.first_name)
           setLastName(json.last_name)
           setProfilePicURL(json.profile_picture)
+          setPreferredDims(json.prefered_stream_dimensions)
         })
       }
     })
@@ -185,11 +188,12 @@ export default function Account() {
 
   const updateProfile = () => {
 
-    const requestBody: { username?: string, email?: string, first_name?: string, last_name?: string } = {};
+    const requestBody: { username?: string, email?: string, first_name?: string, last_name?: string, prefered_stream_dimensions?: number } = {};
     if (username) requestBody.username = username;
     if (email) requestBody.email = email;
     if (firstName) requestBody.first_name = firstName
     if (lastName) requestBody.last_name = lastName;
+    if (preferredDims) requestBody.prefered_stream_dimensions = preferredDims
 
     fetch('http://localhost:8000/api/users/me', {
       method: 'PATCH',
@@ -279,6 +283,11 @@ export default function Account() {
         <div className="flex flex-col space-y-4 px-2 lg:px-0">
           <div className="text-black text-xl font-medium">{t('language')}</div>
           <LocaleSelector className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+          border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none" />
+        </div>
+        <div className="flex flex-col space-y-4 px-2 lg:px-0">
+          <div className="text-black text-xl font-medium">{t('vidResolution')}</div>
+          <DimensionSelector preferredDims={preferredDims} onChange={setPreferredDims} className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
           border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none" />
         </div>
         <div className="flex flex-col space-y-4 px-2 lg:px-0">

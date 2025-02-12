@@ -27,6 +27,8 @@ class AppUserSerializer(serializers.Serializer):
 	profile_picture = serializers.ImageField(required=False, allow_null=True, default='profile_pics/default.png')
 	watched_videos = VideoSerializer(many=True, read_only=True)
 	lang = serializers.CharField(required=False, max_length=2)
+	prefered_stream_dimensions = serializers.IntegerField()
+
 
 	def to_representation(self, instance):
 		representation = super().to_representation(instance)
@@ -52,6 +54,7 @@ class AppUserSerializer(serializers.Serializer):
 		instance.password = validated_data.get('password', instance.password)
 		instance.watched_videos.set(validated_data.get('watched_videos', instance.watched_videos.all()))
 		instance.lang = validated_data.get('lang', instance.lang)
+		instance.prefered_stream_dimensions = validated_data.get('prefered_stream_dimensions', instance.prefered_stream_dimensions)
 
 		instance.save()
 		return instance

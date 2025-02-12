@@ -22,6 +22,7 @@ class AppUser(models.Model):
 	github_iden = models.CharField(max_length=100, default="")
 	profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True, default='profile_pics/default.png')
 	lang = models.CharField(max_length=2, default="en")
+	prefered_stream_dimensions = models.PositiveIntegerField(default=1, choices=[(0, "SMALL"), (1, "MEDIUM"), (2, "LARGE")]) # stream dimensions, 0 - small, 1 - medium, 2 - large
 
 	class Meta:
 		ordering = ['created']

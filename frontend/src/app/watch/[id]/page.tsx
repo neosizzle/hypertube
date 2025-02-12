@@ -7,6 +7,9 @@ import { useEffect, useRef, useState } from "react"
 import { motion } from "motion/react"
 import Image from "next/image"
 import Peer from 'simple-peer';
+import { User } from "../../../types/User"
+import { useLocale, useTranslations } from "next-intl"
+import { locales } from "@/i18n/config"
 
 const enter = {
   opacity: 1,
@@ -162,25 +165,81 @@ function CommentSection({ videoID }: {videoID : string}) {
 
 }
 
-function VideoInfo({ id }: { id: string }) {
+function VideoInfo({ tmbd_id }: { tmbd_id: string }) {
 
-  const [title, setTitle] = useState('Squid Game')
+  const [title, setTitle] = useState('')
+  const [releaseDate, setReleaseDate] = useState('');
+  const [overview, setOverview] = useState('');
+
+  const { push } = useRouter()
+
+  useEffect(() => {
+    if (tmbd_id == '') {
+      return
+    }
+
+    fetch(`http://localhost:8000/api/show/info?id=${tmbd_id}&type=movie`)
+    .then((resp) => {
+      if (resp.ok) {
+        resp.json().then((data) => {
+          setTitle(data.original_title)
+          setReleaseDate(data.details.release_date)
+          setOverview(data.overview)
+          console.log(data)
+        })
+      }
+    })
+    .catch((e) => {
+      console.log(e)
+      alert("show info fetch error")
+      push("/browse")
+    })
+  }, [tmbd_id, push])
+  
 
   return (
     <div className="px-4 lg:space-y-4 flex flex-col items-start">
-      <div className="text-black font-bold text-2xl lg:text-5xl">{title}</div>
-      <div className="text-black font-medium text-md lg:text-2xl">S1E6</div>
-      <div className="text-black font-medium text-xs lg:text-xl pt-1 lg:pt-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+      {
+        title.length == 0 ?
+        <div className="animate-pulse h-10 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
+        :
+        <div className="text-black font-bold text-2xl lg:text-5xl">{title}</div>
+      }
+
+      {
+        releaseDate.length == 0 ?
+        <div className="animate-pulse h-5 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
+        :
+        <div className="text-black font-medium text-md lg:text-2xl">{releaseDate}</div>
+      }
+
+      {
+        overview.length == 0 ?
+        <div className="animate-pulse h-20 bg-gray-200 dark:bg-gray-700 w-full mb-4"></div>
+        :
+        <div className="text-black font-medium text-xs lg:text-xl pt-1 lg:pt-0">{overview}</div>
+      }
+
     </div>
   )
 }
 
-function TorrentInfo() {
+function SubtitleLocaleSelector({ curr_lang, className, onChange }: { curr_lang: string, className?: string, onChange: (value: string) => void }) {
+
+  const l = useTranslations('Locales')
 
   return (
-    <div className="flex flex-col w-1/3 h-[44rem] bg-gray-100 rounded-lg p-5">
-      <div className="text-black text-bold text-4xl p-4">Torrent Info</div>
-    </div>
+   <div>
+     Subtitles: &nbsp;
+     <select className={className}
+      value={curr_lang}
+      onChange={(e) =>  onChange(e.target.value)}>
+        {
+          locales.map((locale, i) =>  (<option key={i} value={locale}>{l(locale)}</option>))
+        }
+      </select>
+      <div>subtitle downloading status...</div>
+   </div>
   )
 }
 
@@ -191,7 +250,9 @@ export default function Watch() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const { id } : { id : string } = useParams()
   const [ showId ] = useState(id)
-
+  const [user, setUser] = useState<User | null>(null);
+  const [tmdbid, setTmdbid] = useState('');
+  const [subLang, setSubLang] = useState<string | null>(null)
 
   const init_ws = () => {
     // socket connect
@@ -269,12 +330,38 @@ export default function Watch() {
   }
 
   useEffect(() => {
+    // NOTE: always assuming this works as middleware does not fail us
+    fetch(`http://localhost:8000/api/users/me`, {
+      method: 'GET',
+      credentials: 'include',
+    }).then((data) => {
+      if (data.ok) {
+        data.json().then((json) => {
+          setUser(json)
+          setSubLang(json.lang)
+        })
+      }
+    })
+  }, [])
+  
+
+  useEffect(() => {
+
+    if (user == null) {
+      return
+    }
+
+    // get preferred language and resolution
+    // console.log(user)
 
     // GET api/videos to obtain torrent path and subtitle inforation
     fetch(`http://localhost:8000/api/videos/${id}`).then(data => data.json())
     .then(data => {
       let need_update = false
       const tmdb_id = data.tmdb_id
+
+      // set tmbd id state
+      setTmdbid(tmdb_id)
 
       // torrent does not exist
       if (data.torrent_file_name.length == 0) {
@@ -300,13 +387,13 @@ export default function Watch() {
       }
 
       // establish RTC handshake
-      init_ws()
+      // init_ws()
 
     })
     .catch((error) => console.error(error))
-
-
-  }, [id])
+  
+    // mark current video as watched
+  }, [id, user])
 
   return (
     <div className="h-auto w-full bg-white flex flex-col justify-between">
@@ -314,9 +401,19 @@ export default function Watch() {
       <div className="flex flex-col justify-center lg:py-10 lg:px-16 mb-auto space-y-4 lg:space-y-8">
         <div className="flex flex-col lg:flex-row space-x-8 h-full">
           <iframe className="w-full lg:w-[65%] aspect-video bg-black text-black lg:rounded-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ"/>
+          {
+            !subLang?
+            <div className="animate-pulse h-10 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
+            :
+            <SubtitleLocaleSelector
+            className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+          border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none"
+            curr_lang={subLang}
+            onChange={(new_lang) => setSubLang(new_lang)}/>
+          }
           {/* <TorrentInfo /> */}
         </div>
-        <VideoInfo id={id}/>
+        <VideoInfo tmbd_id={tmdbid}/>
         <CommentSection videoID={id}/>
       </div>
       <Footer />

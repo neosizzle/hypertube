@@ -75,7 +75,7 @@ def get_session_user_and_time(token):
 # Messaging RFC:
 # token|type|payload1|payload2|payload3|payload4|payload5|payload6|payload7
 # NOTE: payload needs to have 9 elements
-# type must be handshake | video | bye
+# type must be handshake | video | custom_sub
 
 # Convention for type 'handshake'
 # payload1 - RTC handshake data
@@ -107,6 +107,15 @@ def get_session_user_and_time(token):
 
 # Convention for type 'video'
 # payload1 - RTC handshake data
+
+# Convention for type 'custom_sub'
+# this type is made as a duct tape patch for the user to manually download additional subtitles
+# payload1 - Same as payload4 for type 'handshake': Subscene subtitle download link (for -SNA flags) followed by an '@' and the language OR blank value
+# NOTE: The signalling service will call a GET request to the link provided
+# NOTE: the language paraeter is used for file saving purposes only
+# EXAMPLE: https://sub-scene.com/download/3353927@
+#
+# payload2 - IMDB id
 
 _global = []
 some_state = [0]
@@ -431,4 +440,23 @@ class SignalConsumer(AsyncConsumer):
              await self.send({
                 "type": "websocket.send",
                 "text": f"{token}|pong|",
-            }) 
+            })
+        elif msg_type == "custom_sub":
+            # imdb_id = data_sections[3]
+            # download_link_w_lang = data_sections[2]
+            download_link_w_lang = "https://sub-scene.com/download/3353927@EN"
+            download_link,lang = download_link_w_lang.split('@')
+            imdb_id = 69420
+            task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
+            self.local_background_tasks.add(task)
+            task.add_done_callback(self.local_background_tasks.discard)
+
+            # wait for subtitles fully processed
+            if self.subtitle_download_done != None:
+                await asyncio.sleep(5)
+                print("SUBTITLE waiting for completion")
+
+            await self.send({
+                "type": "websocket.send",
+                "text": f"{token}|custom_sub|OK",
+            })
