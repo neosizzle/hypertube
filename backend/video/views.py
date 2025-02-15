@@ -265,8 +265,6 @@ class ShowInfo(APIView):
 			return Response({"detail": "id or type must not be empty"},
 							status=status.HTTP_400_BAD_REQUEST)
 
-		print(f"============requesting tmbd id {tmdb_id}")
-
 		params = {
 			'api_key': os.getenv('TMDB_KEY'),
 			'append_to_response': 'credits'
@@ -720,7 +718,6 @@ class FromTMDB(APIView):
 			return Response({"detail": "tmdb_id and type are required parameters"},
 							status=status.HTTP_400_BAD_REQUEST)
 		
-		print(f"============adding tmbd id {tmdb_id}")
 		if type not in ['movie', 'tv']:
 			return Response({"detail": "type must only be movie or tv"},
 							status=status.HTTP_400_BAD_REQUEST)

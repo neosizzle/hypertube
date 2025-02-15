@@ -411,7 +411,6 @@ export default function Watch() {
             curr_lang={subLang}
             onChange={(new_lang) => setSubLang(new_lang)}/>
           }
-          {/* <TorrentInfo /> */}
         </div>
         <VideoInfo tmbd_id={tmdbid}/>
         <CommentSection videoID={id}/>
