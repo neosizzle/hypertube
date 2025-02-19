@@ -27,7 +27,7 @@ class AppUserSerializer(serializers.Serializer):
 	profile_picture = serializers.ImageField(required=False, allow_null=True, default='profile_pics/default.png')
 	watched_videos = VideoSerializer(many=True, read_only=True)
 	lang = serializers.CharField(required=False, max_length=2)
-	prefered_stream_dimensions = serializers.IntegerField()
+	prefered_stream_dimensions = serializers.IntegerField(default=1)
 
 
 	def to_representation(self, instance):

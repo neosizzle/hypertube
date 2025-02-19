@@ -1,3 +1,5 @@
+import { Video } from "./Video"
+
 export type User = {
 	id: number
 	discord_iden: string
@@ -9,7 +11,7 @@ export type User = {
 	email: string | null
 	profile_picture: string,
 	username: string
-	watch_videos: []
+	watch_videos: [Video]
 	prefered_stream_dimensions: number
   }
   

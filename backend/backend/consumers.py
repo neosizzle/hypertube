@@ -51,6 +51,7 @@ def srt_to_vtt(srt_file, vtt_file):
         srt_content = srt.read()
         subtitle_blocks = srt_content.strip().split('\n\n')
         
+        i = 1
         for block in subtitle_blocks:
             lines = block.split('\n')
             
@@ -63,7 +64,8 @@ def srt_to_vtt(srt_file, vtt_file):
             subtitle_text = '\n'.join(lines[2:])
             
             # Write the converted timestamp and subtitle to the VTT file
-            vtt.write(f"{timestamp}\n{subtitle_text}\n\n")
+            vtt.write(f"{i}\n{timestamp}\n{subtitle_text}\n\n")
+            i += 1
 
 def get_session_user_and_time(token):
     try:
@@ -100,7 +102,7 @@ def get_session_user_and_time(token):
 # Allowed values - mp4, mkv
 #
 # payload6 - IMDB id
-# NOTE: this is used when saving subtitles and mp4 torrents into disk
+# NOTE: this is used when saving subtitles and video torrents into disk
 #
 # payload7 - Video size in WIDGTHxHEIGHT or blank
 #
@@ -122,7 +124,7 @@ some_state = [0]
 lock = asyncio.Lock()
 # async with lock:
 
-ACCEPTED_MSG_TYPES = ["handshake", "video", "ping"]
+ACCEPTED_MSG_TYPES = ["handshake", "video", "ping", "custom_sub"]
 ACCEPTED_FLAGS = ["VASA", "VNASNA", "VNASA", "VASNA"]
 # 1 new connection will create 1 new consumer
 class SignalConsumer(AsyncConsumer):
@@ -152,10 +154,10 @@ class SignalConsumer(AsyncConsumer):
 
     # takes a magnet link as input
     # TODO: check if the default file is mkv, ocme up w/ a way to handle that
-    async def stream_torrent(self, magnet_link, imdb_id):
+    async def stream_torrent(self, magnet_link, imdb_id, token):
         # Create a session, and add a torrent
         session = TorrentSession()
-        save_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{imdb_id}.mp4')
+        save_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{imdb_id}') # all file contents go into imdb_id folder
         with session.add_torrent(magnet_link=magnet_link, remove_after=False, save_path=save_path) as torrent:
             # Force sequential mode - data arrives in sequence, required for streaming
             torrent.sequential(True)
@@ -166,6 +168,12 @@ class SignalConsumer(AsyncConsumer):
                 media = next(a for a in torrent
                              if a.is_media and not 'sample' in a.path.lower())
                 async with self.lock:
+                    # send socket message to inform frontend on path name so they can save to db
+                    # unessacary indirection, better way is to save it directly here
+                    await self.send({
+                        "type": "websocket.send",
+                        "text": f"{token}|info|{imdb_id}/{media.path}",
+                    })
                     self.current_torrenting_media = media
 
                 # only exit when media is 100% completed
@@ -332,7 +340,7 @@ class SignalConsumer(AsyncConsumer):
                 # imdb_id = data_sections[7]
                 imdb_id = 69420
                 magnet = "magnet:?xt=urn:btih:77BD6C1F4CFE1C59B29E571623956F17553594A0&tr=udp%3A%2F%2Ftracker.moeking.me%3A6969%2Fannounce&tr=udp%3A%2F%2Fwww.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.bitsearch.to%3A1337%2Fannounce&dn=%5BBitsearch.to%5D+Invincible.2021.S02E07.720p.WEB.x265-MiNX%5BTGx%5D"
-                task = asyncio.create_task(self.stream_torrent(magnet, imdb_id))
+                task = asyncio.create_task(self.stream_torrent(magnet, imdb_id, token))
                 self.local_background_tasks.add(task)
                 task.add_done_callback(self.local_background_tasks.discard)
 
@@ -357,15 +365,15 @@ class SignalConsumer(AsyncConsumer):
             if "VA" in flags:
                 media_file_path = data_sections[4]
 
-            if "SNA" in flags:
-                # imdb_id = data_sections[7]
-                # download_link_w_lang = data_sections[5]
-                download_link_w_lang = "https://sub-scene.com/download/3353927@EN"
-                download_link,lang = download_link_w_lang.split('@')
-                imdb_id = 69420
-                task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
-                self.local_background_tasks.add(task)
-                task.add_done_callback(self.local_background_tasks.discard)
+            # if "SNA" in flags:
+            #     # imdb_id = data_sections[7]
+            #     # download_link_w_lang = data_sections[5]
+            #     download_link_w_lang = "https://sub-scene.com/download/3353927@EN"
+            #     download_link,lang = download_link_w_lang.split('@')
+            #     imdb_id = 69420
+            #     task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
+            #     self.local_background_tasks.add(task)
+            #     task.add_done_callback(self.local_background_tasks.discard)
 
 
             # wait for subtitles fully processed
@@ -381,23 +389,25 @@ class SignalConsumer(AsyncConsumer):
 
             # if the conversion flag is to mkv is set. If it is, start converion process
             # and wait for the conversion process until the output file exists (?)
-            conversion = data_sections[6]
-            if conversion == "mkv":
-                mp4_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
-                name, ext = os.path.splitext(mp4_path)
-                out_name = name + ".mkv"
+            # NOTE: not needed, mediastream is insensitive to video format
 
-                task = asyncio.create_task(self.mp4_to_mkv(mp4_path, out_name, token))
-                self.local_background_tasks.add(task)
-                task.add_done_callback(self.local_background_tasks.discard)
+            # conversion = data_sections[6]
+            # if conversion == "mkv":
+            #     mp4_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
+            #     name, ext = os.path.splitext(mp4_path)
+            #     out_name = name + ".mkv"
 
-                # NOTE: wait for conversion to at least complete header. bad practice for arb wait here
-                # TODO: implement dynamic progress checking. (Low priority)
-                await asyncio.sleep(5)
-                while not os.path.exists(out_name):
-                    await asyncio.sleep(1)
-                    print(f"FFMPEG waiting for mkv conversion to finish")
-                media_file_path = os.path.splitext(media_file_path)[0] + ".mkv"
+            #     task = asyncio.create_task(self.mp4_to_mkv(mp4_path, out_name, token))
+            #     self.local_background_tasks.add(task)
+            #     task.add_done_callback(self.local_background_tasks.discard)
+
+            #     # NOTE: wait for conversion to at least complete header. bad practice for arb wait here
+            #     # TODO: implement dynamic progress checking. (Low priority)
+            #     await asyncio.sleep(5)
+            #     while not os.path.exists(out_name):
+            #         await asyncio.sleep(1)
+            #         print(f"FFMPEG waiting for mkv conversion to finish")
+            #     media_file_path = os.path.splitext(media_file_path)[0] + ".mkv"
 
             file_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
 
@@ -444,7 +454,7 @@ class SignalConsumer(AsyncConsumer):
         elif msg_type == "custom_sub":
             # imdb_id = data_sections[3]
             # download_link_w_lang = data_sections[2]
-            download_link_w_lang = "https://sub-scene.com/download/3353927@EN"
+            download_link_w_lang = "https://sub-scene.com/download/3353927@en"
             download_link,lang = download_link_w_lang.split('@')
             imdb_id = 69420
             task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
@@ -458,5 +468,5 @@ class SignalConsumer(AsyncConsumer):
 
             await self.send({
                 "type": "websocket.send",
-                "text": f"{token}|custom_sub|OK",
+                "text": f"{token}|custom_sub|{lang}", # user will construct path
             })

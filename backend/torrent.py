@@ -246,7 +246,7 @@ class TorrentFile:
 
     async def wait_for_completion(self, percent):
         while self.completed_percent < percent:
-            print(f"{self.root}{self.path}: {self.completed_percent}%")
+            print(f"{self.root}/{self.path}: {self.completed_percent}%")
             await asyncio.sleep(5)
 
     async def launch(self):

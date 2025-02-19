@@ -1,96 +1,175 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
 import Peer from 'simple-peer';
 
 export default function Home() {
   const connectionRef = useRef<any>(null);
-  const wsRef = useRef<any>(null);
+  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/');
   const connectedStateRef = useRef(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [init, setInit] = useState(false);
+
+  useEffect(() => {
+    if (lastMessage == null || !init)
+        return
+    const tokens = lastMessage.data.split("|");
+    const type = tokens[1]
+    const message = tokens[2]
+    console.log('Message from server:', message);
+
+    if (type == "handshake") {
+      // we should have an answer here. 
+      // use the connectionref to ack that answer using peer.signal()
+      connectionRef.current.signal(message) // at this point, the peers are connected
+    }
+
+    if (type == "video") {
+      // this is sent my server to negotiate video codec stuff
+      // https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
+      connectionRef.current.signal(message) // we are acking video here 
+    }
+
+    if (type == "info") {
+      alert(message)
+    }
+    
+  }, [lastMessage, init]);
+
+  useEffect(() => {
+    if (readyState != ReadyState.OPEN || !init)
+      return
+    
+    // create rtc peer
+    const peer = new Peer({ initiator: true, trickle: false });
+
+    peer.on('signal', (data) => {
+      // we are the initiator here, this would get called after creation OR ack video
+      // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
+      const data_str = JSON.stringify(data)
+      if (!connectedStateRef.current)
+        sendMessage(`pass|handshake|${data_str}|VASNA|src.mov|subscne|mkv|imdb_id|`)
+
+      // for ack video, 'data will contain ack message
+      else
+        sendMessage(`pass|video|${data_str}|asd|asd|ada|asd||`)
+
+      alert(`peer signal, connected? ${connectedStateRef.current}`)
+    });
+
+    peer.on('connect', () => {
+      connectedStateRef.current = true
+      alert('remote peer connect')
+    })
+
+    peer.on('stream', (currentStream) => {
+      console.log(currentStream)
+      setStream(currentStream)
+      alert('peer stream')
+    });
+
+    peer.on('close', () => {
+      alert('remote peer close')
+    })
+
+    peer.on('error', (e) => {
+      alert('remote peer error')
+      console.log(e)
+    })
+
+    // TODO: add a message handler for datachannel.
+
+    connectionRef.current = peer;
+    
+  }, [readyState, init])
 
   const handleClick = () => {
 
-    if (wsRef.current != null)
+    if (init)
     {
       alert("sd ada ws lah babi")
       return
     }
 
+    setInit(true)
+
     // socket connect
-    const socket = new WebSocket('ws://localhost:8000/ws/signalling/');
-    socket.onopen = () => {
+    // const socket = new WebSocket('ws://localhost:8000/ws/signalling/');
+    // socket.onopen = () => {
       
-      // create rtc peer
-      const peer = new Peer({ initiator: true, trickle: false });
+    //   // create rtc peer
+    //   const peer = new Peer({ initiator: true, trickle: false });
 
-      peer.on('signal', (data) => {
-        // we are the initiator here, this would get called after creation OR ack video
-        // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
-        const data_str = JSON.stringify(data)
-        if (!connectedStateRef.current)
-          socket.send(`pass|handshake|${data_str}|VNASNA|src.mp4|subscne|mkv|imdb_id|`)
+    //   peer.on('signal', (data) => {
+    //     // we are the initiator here, this would get called after creation OR ack video
+    //     // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
+    //     const data_str = JSON.stringify(data)
+    //     if (!connectedStateRef.current)
+    //       socket.send(`pass|handshake|${data_str}|VASNA|src.mov|subscne|mkv|imdb_id|`)
 
-        // for ack video, 'data will contain ack message
-        else
-          socket.send(`pass|video|${data_str}|asd|asd|ada|asd||`)
+    //     // for ack video, 'data will contain ack message
+    //     else
+    //       socket.send(`pass|video|${data_str}|asd|asd|ada|asd||`)
 
-        alert(`peer signal, connected? ${connectedStateRef.current}`)
-      });
+    //     alert(`peer signal, connected? ${connectedStateRef.current}`)
+    //   });
 
-      peer.on('connect', () => {
-        connectedStateRef.current = true
-        alert('remote peer connect')
-      })
+    //   peer.on('connect', () => {
+    //     connectedStateRef.current = true
+    //     alert('remote peer connect')
+    //   })
 
-      peer.on('stream', (currentStream) => {
-        console.log(currentStream)
-        setStream(currentStream)
-        alert('peer stream')
-      });
+    //   peer.on('stream', (currentStream) => {
+    //     console.log(currentStream)
+    //     setStream(currentStream)
+    //     alert('peer stream')
+    //   });
 
-      peer.on('close', () => {
-        alert('remote peer close')
-      })
+    //   peer.on('close', () => {
+    //     alert('remote peer close')
+    //   })
 
-      peer.on('error', (e) => {
-        alert('remote peer error')
-        console.log(e.code)
-      })
+    //   peer.on('error', (e) => {
+    //     alert('remote peer error')
+    //     console.log(e.code)
+    //   })
 
-      // TODO: add a message handler for datachannel.
+    //   // TODO: add a message handler for datachannel.
 
-      connectionRef.current = peer;
+    //   connectionRef.current = peer;
       
-    }
+    // }
 
-    socket.onmessage = (event) => {
-      const tokens = event.data.split("|");
-      const type = tokens[1]
-      const message = tokens[2]
-      console.log('Message from server:', message);
+    // socket.onmessage = (event) => {
+    //   const tokens = event.data.split("|");
+    //   const type = tokens[1]
+    //   const message = tokens[2]
+    //   console.log('Message from server:', message);
 
-      if (type == "handshake") {
-        // we should have an answer here. 
-        // use the connectionref to ack that answer using peer.signal()
-        connectionRef.current.signal(message) // at this point, the peers are connected
-      }
+    //   if (type == "handshake") {
+    //     // we should have an answer here. 
+    //     // use the connectionref to ack that answer using peer.signal()
+    //     connectionRef.current.signal(message) // at this point, the peers are connected
+    //   }
 
-      if (type == "video") {
-        // this is sent my server to negotiate video codec stuff
-        // https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
-        connectionRef.current.signal(message) // we are acking video here 
-      }
+    //   if (type == "video") {
+    //     // this is sent my server to negotiate video codec stuff
+    //     // https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
+    //     connectionRef.current.signal(message) // we are acking video here 
+    //   }
+
+    //   if (type == "info") {
+    //     alert(message)
+    //   }
       
-    };
+    // };
 
-    socket.onclose = (what) => {
-      console.log(`WebSocket connection closed`);
-      console.log(what)
-    };
-  
-    wsRef.current = socket;
-
+    // socket.onclose = (what) => {
+    //   console.log(`WebSocket connection closed`);
+    //   console.log(what)
+    // };
+    
   };
 
   return (
@@ -132,7 +211,23 @@ const MediaStreamPlayer: React.FC<MediaStreamPlayerProps> = ({ stream }) => {
         controls={true}
         ref={videoRef}
         style={{ width: '50%', height: 'auto', border: '1px solid black' }}
+        crossOrigin='anonymous'
+      >
+      <track
+      label="English"
+      kind="subtitles"
+      srcLang='en'
+      src="http://localhost:8000/media/subtitles/69420EN.vtt"
       />
+
+      <track
+      label="Malay"
+      kind="subtitles"
+      srcLang='az'
+      src="http://localhost:8000/media/subtitles/69420EN.vtt"
+      />
+
+      </video>
     </div>
   );
 };

@@ -4,12 +4,14 @@ import Footer from "@/components/Footer"
 import Header from "@/components/Header"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
+import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { motion } from "motion/react"
 import Image from "next/image"
 import Peer from 'simple-peer';
 import { User } from "../../../types/User"
-import { useLocale, useTranslations } from "next-intl"
+import { useTranslations } from "next-intl"
 import { locales } from "@/i18n/config"
+import { Video } from "../../../types/Video"
 
 const enter = {
   opacity: 1,
@@ -144,7 +146,6 @@ function CommentSection({ videoID }: {videoID : string}) {
     }).then((data) => {
       if (data.ok) {
         data.json().then((json) => {
-          console.log(JSON.stringify(json))
           setUserID(json.id)
           setProfilePicURL(`http://localhost:8000` + json.profile_picture)
           getComments()
@@ -165,7 +166,7 @@ function CommentSection({ videoID }: {videoID : string}) {
 
 }
 
-function VideoInfo({ tmbd_id }: { tmbd_id: string }) {
+function VideoInfo({ tmbd_id, onObtainImdbId }: { tmbd_id: string, onObtainImdbId : (v: string) => void}) {
 
   const [title, setTitle] = useState('')
   const [releaseDate, setReleaseDate] = useState('');
@@ -185,7 +186,7 @@ function VideoInfo({ tmbd_id }: { tmbd_id: string }) {
           setTitle(data.original_title)
           setReleaseDate(data.details.release_date)
           setOverview(data.overview)
-          console.log(data)
+          onObtainImdbId(data.details.imdb_id)
         })
       }
     })
@@ -245,21 +246,23 @@ function SubtitleLocaleSelector({ curr_lang, className, onChange }: { curr_lang:
 
 export default function Watch() {
   const connectionRef = useRef<any>(null);
-  const wsRef = useRef<any>(null);
+  const [wsSocket, setWsSocket] = useState<WebSocket | null>(null);
   const connectedStateRef = useRef(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const { id } : { id : string } = useParams()
   const [ showId ] = useState(id)
   const [user, setUser] = useState<User | null>(null);
   const [tmdbid, setTmdbid] = useState('');
+  const [imdbid, setImdbid] = useState('');
+  const [video, setVideo] = useState<Video | null>(null);
   const [subLang, setSubLang] = useState<string | null>(null)
+  const [subPath, setSubPath] = useState<string | null>(null)
 
   const init_ws = () => {
     // socket connect
     const socket = new WebSocket('ws://localhost:8000/ws/signalling/');
 
     socket.onopen = () => {
-      
       // create rtc peer
       const peer = new Peer({ initiator: true, trickle: false });
 
@@ -267,15 +270,16 @@ export default function Watch() {
         // we are the initiator here, this would get called after creation OR ack video
         // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
         // TODO: make these values correct
-        const data_str = JSON.stringify(data)
-        if (!connectedStateRef.current)
-          socket.send(`pass|handshake|${data_str}|VNASA|videoanme|subscne|mp4|imdb_id|`)
 
-        // for ack video, 'data will contain ack message
-        else
-          socket.send(`pass|video|${data_str}|asd|asd|ada|asd||`)
+        // const data_str = JSON.stringify(data)
+        // if (!connectedStateRef.current)
+        //   socket.send(`pass|handshake|${data_str}|VNASA|videoanme|subscne|mp4|imdb_id|`)
 
-        alert(`peer signal, connected? ${connectedStateRef.current}`)
+        // // for ack video, 'data will contain ack message
+        // else
+        //   socket.send(`pass|video|${data_str}|asd|asd|ada|asd||`)
+
+        // alert(`peer signal, connected? ${connectedStateRef.current}`)
       });
 
       peer.on('connect', () => {
@@ -318,6 +322,11 @@ export default function Watch() {
         // https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
         connectionRef.current.signal(message) // we are acking video here 
       }
+
+      if (type == "custom_sub") {
+        // subtitle have finished downloading
+        alert("sub OK")
+      }
       
     };
 
@@ -326,9 +335,10 @@ export default function Watch() {
       console.log(what)
     };
   
-    wsRef.current = socket;
+    setWsSocket(socket);
   }
 
+  // handle get user
   useEffect(() => {
     // NOTE: always assuming this works as middleware does not fail us
     fetch(`http://localhost:8000/api/users/me`, {
@@ -343,8 +353,34 @@ export default function Watch() {
       }
     })
   }, [])
+
+  // handle manual download of subtitle
+  useEffect(() => {
+    if (!subLang || !video || !wsSocket || !imdbid) {
+      return 
+    }
+
+    console.log(wsSocket.readyState)
+
+    console.log(`sl ${subLang} ${video.en_sub_file_name} ${video.bm_sub_file_name}`)
+    if (subLang == "en" && video.en_sub_file_name == ""){
+      wsSocket.send(`pass|custom_sub|dl_link here|${video.tmdb_id}|||||`)
+    }
+    else {
+      setSubPath(video.en_sub_file_name)
+    }
+
+    if (subLang == "bm" && video.bm_sub_file_name == ""){
+      wsSocket.send(`pass|custom_sub|dl_link here|${video.tmdb_id}|||||`)
+    }
+    else {
+      setSubPath(video.bm_sub_file_name)
+    }
+    
+  }, [subLang, wsSocket?.readyState, imdbid])
   
 
+  // handle get streaming metadata and updating model
   useEffect(() => {
 
     if (user == null) {
@@ -357,37 +393,34 @@ export default function Watch() {
     // GET api/videos to obtain torrent path and subtitle inforation
     fetch(`http://localhost:8000/api/videos/${id}`).then(data => data.json())
     .then(data => {
-      let need_update = false
-      const tmdb_id = data.tmdb_id
+      setVideo(data)
+      setTmdbid(data.tmdb_id)
 
-      // set tmbd id state
-      setTmdbid(tmdb_id)
+      // // torrent does not exist
+      // if (data.torrent_file_name.length == 0) {
+      //   // TODO search for magnet link
+      //   need_update = true
+      // }
 
-      // torrent does not exist
-      if (data.torrent_file_name.length == 0) {
-        // TODO search for magnet link
-        need_update = true
-      }
+      // // TODO, get language from user, but assuming english for now
+      // if (data.en_sub_file_name.length == 0) {
+      //   // get subtitle 
+      //   need_update = true
+      // }
 
-      // TODO, get language from user, but assuming english for now
-      if (data.en_sub_file_name.length == 0) {
-        // get subtitle 
-        need_update = true
-      }
-
-      // if need update, send put request to update model
-      if (need_update) {
-        fetch(`http://localhost:8000/api/videos/${id}`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            en_sub_file_name: `${tmdb_id}.vtt`,
-            torrent_file_name: `${tmdb_id}.mp4`
-          })
-        })
-      }
+      // // if need update, send put request to update model
+      // if (need_update) {
+      //   fetch(`http://localhost:8000/api/videos/${id}`, {
+      //     method: "PATCH",
+      //     body: JSON.stringify({
+      //       en_sub_file_name: `${tmdb_id}.vtt`,
+      //       torrent_file_name: `${tmdb_id}.mp4`
+      //     })
+      //   })
+      // }
 
       // establish RTC handshake
-      // init_ws()
+      init_ws()
 
     })
     .catch((error) => console.error(error))
@@ -412,7 +445,7 @@ export default function Watch() {
             onChange={(new_lang) => setSubLang(new_lang)}/>
           }
         </div>
-        <VideoInfo tmbd_id={tmdbid}/>
+        <VideoInfo tmbd_id={tmdbid} onObtainImdbId={setImdbid}/>
         <CommentSection videoID={id}/>
       </div>
       <Footer />
