@@ -12,6 +12,7 @@ import { User } from "../../../types/User"
 import { useTranslations } from "next-intl"
 import { locales } from "@/i18n/config"
 import { Video } from "../../../types/Video"
+import { sub } from "motion/react-client"
 
 const enter = {
   opacity: 1,
@@ -246,7 +247,6 @@ function SubtitleLocaleSelector({ curr_lang, className, onChange }: { curr_lang:
 
 export default function Watch() {
   const connectionRef = useRef<any>(null);
-  const [wsSocket, setWsSocket] = useState<WebSocket | null>(null);
   const connectedStateRef = useRef(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const { id } : { id : string } = useParams()
@@ -257,86 +257,55 @@ export default function Watch() {
   const [video, setVideo] = useState<Video | null>(null);
   const [subLang, setSubLang] = useState<string | null>(null)
   const [subPath, setSubPath] = useState<string | null>(null)
+  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/');
 
-  const init_ws = () => {
-    // socket connect
-    const socket = new WebSocket('ws://localhost:8000/ws/signalling/');
+  // init RTC peer when ws is connected
+  useEffect(() => {
+    if (readyState != ReadyState.OPEN)
+      return
+    
+    // create rtc peer
+    const peer = new Peer({ initiator: true, trickle: false });
 
-    socket.onopen = () => {
-      // create rtc peer
-      const peer = new Peer({ initiator: true, trickle: false });
+    peer.on('signal', (data) => {
+      // we are the initiator here, this would get called after creation OR ack video
+      // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
+      // TODO: make these values correct
 
-      peer.on('signal', (data) => {
-        // we are the initiator here, this would get called after creation OR ack video
-        // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
-        // TODO: make these values correct
+      // const data_str = JSON.stringify(data)
+      // if (!connectedStateRef.current)
+      //   socket.send(`pass|handshake|${data_str}|VNASA|videoanme|subscne|mp4|imdb_id|`)
 
-        // const data_str = JSON.stringify(data)
-        // if (!connectedStateRef.current)
-        //   socket.send(`pass|handshake|${data_str}|VNASA|videoanme|subscne|mp4|imdb_id|`)
+      // // for ack video, 'data will contain ack message
+      // else
+      //   socket.send(`pass|video|${data_str}|asd|asd|ada|asd||`)
 
-        // // for ack video, 'data will contain ack message
-        // else
-        //   socket.send(`pass|video|${data_str}|asd|asd|ada|asd||`)
+      // alert(`peer signal, connected? ${connectedStateRef.current}`)
+    });
 
-        // alert(`peer signal, connected? ${connectedStateRef.current}`)
-      });
+    peer.on('connect', () => {
+      connectedStateRef.current = true
+      alert('remote peer connect')
+    })
 
-      peer.on('connect', () => {
-        connectedStateRef.current = true
-        alert('remote peer connect')
-      })
+    peer.on('stream', (currentStream) => {
+      console.log(currentStream)
+      setStream(currentStream)
+      alert('peer stream')
+    });
 
-      peer.on('stream', (currentStream) => {
-        console.log(currentStream)
-        setStream(currentStream)
-        alert('peer stream')
-      });
+    peer.on('close', () => {
+      alert('remote peer close')
+    })
 
-      peer.on('close', () => {
-        alert('remote peer close')
-      })
+    peer.on('error', (e) => {
+      alert('remote peer error')
+      console.log(e.code)
+    })
 
-      peer.on('error', (e) => {
-        alert('remote peer error')
-        console.log(e.code)
-      })
-
-      connectionRef.current = peer;
-    }
-
-    socket.onmessage = (event) => {
-      const tokens = event.data.split("|");
-      const type = tokens[1]
-      const message = tokens[2]
-      console.log('Message from server:', message);
-
-      if (type == "handshake") {
-        // we should have an answer here. 
-        // use the connectionref to ack that answer using peer.signal()
-        connectionRef.current.signal(message) // at this point, the peers are connected
-      }
-
-      if (type == "video") {
-        // this is sent my server to negotiate video codec stuff
-        // https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
-        connectionRef.current.signal(message) // we are acking video here 
-      }
-
-      if (type == "custom_sub") {
-        // subtitle have finished downloading
-        alert("sub OK")
-      }
-      
-    };
-
-    socket.onclose = (what) => {
-      console.log(`WebSocket connection closed`);
-      console.log(what)
-    };
-  
-    setWsSocket(socket);
-  }
+    connectionRef.current = peer;
+    
+  }, [readyState])
 
   // handle get user
   useEffect(() => {
@@ -356,28 +325,23 @@ export default function Watch() {
 
   // handle manual download of subtitle
   useEffect(() => {
-    if (!subLang || !video || !wsSocket || !imdbid) {
+    if (!subLang || !video || readyState != ReadyState.OPEN || !imdbid) {
       return 
     }
-
-    console.log(wsSocket.readyState)
-
-    console.log(`sl ${subLang} ${video.en_sub_file_name} ${video.bm_sub_file_name}`)
-    if (subLang == "en" && video.en_sub_file_name == ""){
-      wsSocket.send(`pass|custom_sub|dl_link here|${video.tmdb_id}|||||`)
-    }
-    else {
-      setSubPath(video.en_sub_file_name)
-    }
-
-    if (subLang == "bm" && video.bm_sub_file_name == ""){
-      wsSocket.send(`pass|custom_sub|dl_link here|${video.tmdb_id}|||||`)
-    }
-    else {
-      setSubPath(video.bm_sub_file_name)
+    
+    if ((subLang == "en" && video.en_sub_file_name == "") || (subLang == "bm" && video.bm_sub_file_name == "")){
+      fetch(`http://localhost:3000/subscene_dl?imdbid=${imdbid}&lang=${subLang}`)
+      .then(data => data.json())
+      .then(data => {
+        sendMessage(`pass|custom_sub|${data['data']}|${video.tmdb_id}|||||`)
+      })
+      .catch(err => console.log(err))
+    
+      if (subLang == "en") setSubPath(video.en_sub_file_name)
+      else setSubPath(video.bm_sub_file_name)
     }
     
-  }, [subLang, wsSocket?.readyState, imdbid])
+  }, [subLang, readyState, imdbid])
   
 
   // handle get streaming metadata and updating model
@@ -420,7 +384,7 @@ export default function Watch() {
       // }
 
       // establish RTC handshake
-      init_ws()
+      // init_ws()
 
     })
     .catch((error) => console.error(error))
@@ -428,6 +392,35 @@ export default function Watch() {
     // mark current video as watched
   }, [id, user])
 
+  // handle incoming ws messages
+  useEffect(() => {
+    if (lastMessage == null)
+      return
+    const tokens = lastMessage.data.split("|");
+    const type = tokens[1]
+    const message = tokens[2]
+    console.log('Message from server:', message);
+
+    if (type == "handshake") {
+      // we should have an answer here. 
+      // use the connectionref to ack that answer using peer.signal()
+      connectionRef.current.signal(message) // at this point, the peers are connected
+    }
+    if (type == "video") {
+      // this is sent my server to negotiate video codec stuff
+      // https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
+      connectionRef.current.signal(message) // we are acking video here 
+    }
+    if (type == "info") {
+      alert(message)
+    }
+    if (type == "custom_sub") {
+      setSubPath(`http://localhost:8000/media/subtitles/${imdbid}${subLang}.vtt`)
+      
+      // update model here
+    }
+  }, [lastMessage])
+  
   return (
     <div className="h-auto w-full bg-white flex flex-col justify-between">
       <Header />
@@ -439,7 +432,7 @@ export default function Watch() {
             <div className="animate-pulse h-10 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
             :
             <SubtitleLocaleSelector
-            className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+            className="disabled w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
           border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none"
             curr_lang={subLang}
             onChange={(new_lang) => setSubLang(new_lang)}/>

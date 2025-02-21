@@ -452,11 +452,11 @@ class SignalConsumer(AsyncConsumer):
                 "text": f"{token}|pong|",
             })
         elif msg_type == "custom_sub":
-            # imdb_id = data_sections[3]
+            imdb_id = data_sections[3]
             # download_link_w_lang = data_sections[2]
             download_link_w_lang = "https://sub-scene.com/download/3353927@en"
             download_link,lang = download_link_w_lang.split('@')
-            imdb_id = 69420
+            # imdb_id = 69420
             task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
             self.local_background_tasks.add(task)
             task.add_done_callback(self.local_background_tasks.discard)
