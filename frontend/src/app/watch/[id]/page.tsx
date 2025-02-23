@@ -167,7 +167,7 @@ function CommentSection({ videoID }: {videoID : string}) {
 
 }
 
-function VideoInfo({ tmbd_id, onObtainImdbId }: { tmbd_id: string, onObtainImdbId : (v: string) => void}) {
+function VideoInfo({ tmbd_id, onObtainImdbId, onObtainName }: { tmbd_id: string, onObtainImdbId : (v: string) => void, onObtainName : (v: string) => void}) {
 
   const [title, setTitle] = useState('')
   const [releaseDate, setReleaseDate] = useState('');
@@ -188,6 +188,7 @@ function VideoInfo({ tmbd_id, onObtainImdbId }: { tmbd_id: string, onObtainImdbI
           setReleaseDate(data.details.release_date)
           setOverview(data.overview)
           onObtainImdbId(data.details.imdb_id)
+          onObtainName(data.original_title)
         })
       }
     })
@@ -226,6 +227,29 @@ function VideoInfo({ tmbd_id, onObtainImdbId }: { tmbd_id: string, onObtainImdbI
   )
 }
 
+function StatusDisplay({ video, subPath, resolvingMagnet, torrent_file_name, stream }: { video: Video | null, subPath : string | null, resolvingMagnet : boolean, torrent_file_name: string | null, stream: MediaStream | null}) {
+  
+  return (
+    <div>
+      <div>
+        Video ... {video ? 'OK' : 'waiting..'}
+      </div>
+  
+      <div>
+        subPath ... {subPath ? 'OK' : 'waiting..'}
+      </div>
+      
+      <div>
+        resolvingMagnet ... {!resolvingMagnet || torrent_file_name ? 'OK' : 'waiting..'}
+      </div>
+      
+      <div>
+        stream ... {stream ? 'OK' : 'waiting..'}
+      </div>
+    </div>
+  )
+}
+
 function SubtitleLocaleSelector({ curr_lang, className, onChange }: { curr_lang: string, className?: string, onChange: (value: string) => void }) {
 
   const l = useTranslations('Locales')
@@ -240,13 +264,13 @@ function SubtitleLocaleSelector({ curr_lang, className, onChange }: { curr_lang:
           locales.map((locale, i) =>  (<option key={i} value={locale}>{l(locale)}</option>))
         }
       </select>
-      <div>subtitle downloading status...</div>
    </div>
   )
 }
 
 export default function Watch() {
   const connectionRef = useRef<any>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const connectedStateRef = useRef(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const { id } : { id : string } = useParams()
@@ -254,11 +278,15 @@ export default function Watch() {
   const [user, setUser] = useState<User | null>(null);
   const [tmdbid, setTmdbid] = useState('');
   const [imdbid, setImdbid] = useState('');
+  const [videoName, setVideoName] = useState('');
   const [video, setVideo] = useState<Video | null>(null);
   const [subLang, setSubLang] = useState<string | null>(null)
   const [subPath, setSubPath] = useState<string | null>(null)
-  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/');
-  const [downloadingSub, setDownloadingSub] = useState(false);
+  const [magnet, setMagnet] = useState<string | null>(null)
+  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/')
+  const [downloadingSub, setDownloadingSub] = useState(false)
+  const [resolvingMagnet, setResolvingMagnet] = useState(false)
+  const [initHandshakeData, setInitHandshakeData] = useState<string | null>(null);
 
   // init RTC peer when ws is connected
   useEffect(() => {
@@ -268,31 +296,25 @@ export default function Watch() {
     // create rtc peer
     const peer = new Peer({ initiator: true, trickle: false });
 
-    peer.on('signal', (data) => {
+    peer.on('signal', (data : any) => {
       // we are the initiator here, this would get called after creation OR ack video
       // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
       // TODO: make these values correct
 
-      // const data_str = JSON.stringify(data)
-      // if (!connectedStateRef.current)
-      //   socket.send(`pass|handshake|${data_str}|VNASA|videoanme|subscne|mp4|imdb_id|`)
-
-      // // for ack video, 'data will contain ack message
-      // else
-      //   socket.send(`pass|video|${data_str}|asd|asd|ada|asd||`)
-
-      // alert(`peer signal, connected? ${connectedStateRef.current}`)
+      const data_str = JSON.stringify(data)
+      if (!connectedStateRef.current)
+        setInitHandshakeData(data_str) // initial signal will be sent once magnet link / filename is retreived
+      else // for ack video, 'data will contain ack message
+        sendMessage(`pass|video|${data_str}|asd|asd|ada|asd||`)
     });
 
     peer.on('connect', () => {
       connectedStateRef.current = true
-      alert('remote peer connect')
+      // alert('remote peer connect')
     })
 
     peer.on('stream', (currentStream) => {
-      console.log(currentStream)
       setStream(currentStream)
-      alert('peer stream')
     });
 
     peer.on('close', () => {
@@ -330,20 +352,19 @@ export default function Watch() {
       return 
     }
     
-    if ((subLang == "en" && video.en_sub_file_name == "") || (subLang == "bm" && video.bm_sub_file_name == "")){
+    if ((subLang == "en" && video.en_sub_file_name == "") || (subLang == "ms" && video.bm_sub_file_name == "")){
       setDownloadingSub(true)
-      fetch(`http://localhost:3000/subscene_dl?imdbid=${imdbid}&lang=${subLang}a`)
+      fetch(`http://localhost:3000/subscene_dl?imdbid=${imdbid}&lang=${subLang}`)
       .then(data => {
         if (data.status != 200)
         {
           alert(`subtitle not found for ${subLang}`)
           setDownloadingSub(false)
-          Promise.reject('subtitle not found for ${subLang}');
+          Promise.reject(`subtitle not found for ${subLang}`);
         }
         return data.json()
       })
       .then(data => {
-        console.log(data)
         sendMessage(`pass|custom_sub|${data['data']}@${subLang}|${video.tmdb_id}|||||`)
       })
       .catch(err => console.log(err))
@@ -353,56 +374,79 @@ export default function Watch() {
       else setSubPath(video.bm_sub_file_name)
     }
     
-  }, [subLang, readyState, imdbid])
+  }, [video, subLang, readyState, imdbid])
   
+  // handle get magnet link if torrent file path is missing
+  useEffect(() => {
+    if (!video || !imdbid || resolvingMagnet || videoName == '') return
 
-  // handle get streaming metadata and updating model
+    if (video.torrent_file_name != '') {
+      return
+    }
+
+    setResolvingMagnet(true)
+    fetch(`http://localhost:8000/api/torrent/movie/search?name=${videoName}&site=yts&imdbid=${imdbid}`)
+    .then(data => {
+      if (data.status != 200)
+      {
+        alert(`torrent not found ${videoName}`)
+        setResolvingMagnet(false)
+        return Promise.reject(`torrent not found ${videoName}`);
+      }
+      return data.json()
+    })
+    .then(data => {
+      const magnet = data['torrents'][0]['magnet']
+      setMagnet(magnet)
+      setResolvingMagnet(false)
+    })
+    .catch(err => console.error(err))
+
+  }, [video, videoName, imdbid])
+  
+  // handle init RTC peer handshake, with either magnet link or torrent path
+  useEffect(() => {
+    if (!video || (magnet && video.torrent_file_name != '') || (!magnet && video.torrent_file_name == '') || !initHandshakeData) return
+
+    // if we have a magnet, send handshake with magnet link
+    if (magnet)
+      sendMessage(`pass|handshake|${initHandshakeData}|VNASA|${magnet}|subscne|mp4|${video.tmdb_id}|`)
+    else
+      sendMessage(`pass|handshake|${initHandshakeData}|VASA|${video.torrent_file_name}|subscne|mp4|${video.tmdb_id}|`)
+  }, [video, magnet, initHandshakeData])
+
+  // handle get streaming metadata
   useEffect(() => {
 
     if (user == null) {
       return
     }
 
-    // get preferred language and resolution
-    // console.log(user)
-
     // GET api/videos to obtain torrent path and subtitle inforation
     fetch(`http://localhost:8000/api/videos/${id}`).then(data => data.json())
     .then(data => {
       setVideo(data)
       setTmdbid(data.tmdb_id)
-
-      // // torrent does not exist
-      // if (data.torrent_file_name.length == 0) {
-      //   // TODO search for magnet link
-      //   need_update = true
-      // }
-
-      // // TODO, get language from user, but assuming english for now
-      // if (data.en_sub_file_name.length == 0) {
-      //   // get subtitle 
-      //   need_update = true
-      // }
-
-      // // if need update, send put request to update model
-      // if (need_update) {
-      //   fetch(`http://localhost:8000/api/videos/${id}`, {
-      //     method: "PATCH",
-      //     body: JSON.stringify({
-      //       en_sub_file_name: `${tmdb_id}.vtt`,
-      //       torrent_file_name: `${tmdb_id}.mp4`
-      //     })
-      //   })
-      // }
-
-      // establish RTC handshake
-      // init_ws()
-
     })
     .catch((error) => console.error(error))
   
     // mark current video as watched
   }, [id, user])
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+
+    // Cleanup when component unmounts or stream changes
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   // handle incoming ws messages
   useEffect(() => {
@@ -411,7 +455,7 @@ export default function Watch() {
     const tokens = lastMessage.data.split("|");
     const type = tokens[1]
     const message = tokens[2]
-    console.log('Message from server:', message);
+    console.log('Message from server:', type);
 
     if (type == "handshake") {
       // we should have an answer here. 
@@ -424,7 +468,19 @@ export default function Watch() {
       connectionRef.current.signal(message) // we are acking video here 
     }
     if (type == "info") {
-      alert(message)
+      const body = {torrent_file_name : message}
+      fetch(`http://localhost:8000/api/videos/${id}`,{
+        method: "PATCH",
+        credentials: 'include',
+        headers : {"Content-Type": "application/json"},
+        body: JSON.stringify(body)
+      })
+      .then((data) => data.json())
+      .then((body) => {
+        setVideo(body)
+      })
+      .catch((e) => console.error(e))
+
     }
     if (type == "custom_sub") {
       // NOTE: video should not be null already here.
@@ -442,6 +498,7 @@ export default function Watch() {
       })
       .then((data) => data.json())
       .then((body) => {
+        setVideo(body)
         if (subLang == "en") setSubPath(body.en_sub_file_name)
         else setSubPath(body.bm_sub_file_name)
       })
@@ -454,19 +511,36 @@ export default function Watch() {
       <Header />
       <div className="flex flex-col justify-center lg:py-10 lg:px-16 mb-auto space-y-4 lg:space-y-8">
         <div className="flex flex-col lg:flex-row space-x-8 h-full">
-          <iframe className="w-full lg:w-[65%] aspect-video bg-black text-black lg:rounded-xl"/>
+          {/* <iframe className="w-full lg:w-[90%] aspect-video bg-black text-black lg:rounded-xl"/> */}
+          <video
+          controls={true}
+          ref={videoRef}
+          className="w-full lg:w-[90%] aspect-video bg-black text-black lg:rounded-xl"
+          crossOrigin='anonymous'
+        ></video>
+        </div>
+        <div className="flex flex-col md:flex-row justify-between">
+          <VideoInfo tmbd_id={tmdbid} onObtainImdbId={setImdbid} onObtainName={setVideoName}/>
           {
             !subLang?
             <div className="animate-pulse h-10 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
             :
-            <SubtitleLocaleSelector
-            className={`${downloadingSub? 'disabled' : ''} disabled w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
-          border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none`}
-            curr_lang={subLang}
-            onChange={(new_lang) => setSubLang(new_lang)}/>
+            <div className="flex flex-col px-4 lg:space-y-4">
+              <StatusDisplay
+              video={video}
+              subPath={subPath}
+              resolvingMagnet={resolvingMagnet}
+              torrent_file_name={video?.torrent_file_name || null}
+              stream={stream}/>
+              
+              <SubtitleLocaleSelector
+              className={`${downloadingSub? 'disabled' : ''} disabled w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+            border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none`}
+              curr_lang={subLang}
+              onChange={(new_lang) => setSubLang(new_lang)}/>
+            </div>
           }
         </div>
-        <VideoInfo tmbd_id={tmdbid} onObtainImdbId={setImdbid}/>
         <CommentSection videoID={id}/>
       </div>
       <Footer />

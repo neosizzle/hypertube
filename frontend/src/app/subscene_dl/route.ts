@@ -3,7 +3,7 @@ const { JSDOM } = require("jsdom");
 
 const LANG_MAP: {[key: string] : string[]} = {
 	"en" : ["English"],
-	"bm": ["Malay", "Indonesian"]
+	"ms": ["Malay", "Indonesian"]
 }
 
 // This indirection is required due to CORS and subscene does not have REST API

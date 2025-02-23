@@ -17,7 +17,7 @@ class VideoSerializer(serializers.Serializer):
 	tmdb_id = serializers.IntegerField(required=True)
 	type = serializers.CharField(max_length=5, required=True) # movie or tv
 	last_watched_time = serializers.DateTimeField(default=timezone.now)
-	torrent_file_name = serializers.CharField(max_length=1024, read_only=True)
+	torrent_file_name = serializers.CharField(max_length=100)
 
 	def create(self, validated_data):
 		# NOTE: NOT NULL constraint failed: video_video.torrent_id
@@ -31,7 +31,7 @@ class VideoSerializer(serializers.Serializer):
 		instance.type = validated_data.get('type', instance.type)
 		instance.last_watched_time = validated_data.get('last_watched_time', instance.last_watched_time)
 		instance.en_sub_file_name = validated_data.get('en_sub_file_name', instance.en_sub_file_name)
-		instance.bn_sub_file_name = validated_data.get('bm_sub_file_name', instance.bm_sub_file_name)
+		instance.bm_sub_file_name = validated_data.get('bm_sub_file_name', instance.bm_sub_file_name)
 		instance.torrent_file_name = validated_data.get('torrent_file_name', instance.torrent_file_name)
 
 		# handling many to many for watched_by

@@ -66,7 +66,6 @@ class VideoDetail(APIView):
 		try:
 			video = Video.objects.get(pk=pk)
 			serializer = VideoSerializer(video)
-			print(f"{serializer.data}")
 			return Response(serializer.data)
 		except Video.DoesNotExist:
 			return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -418,6 +417,7 @@ class FindMovieTorrentFile(APIView):
 		
 		client = Groq(api_key=os.environ.get("GROQ_KEY"))
 		name = request.query_params.get('name')
+		imdbid = request.query_params.get('imdbid')
 		site = request.query_params.get('site')
 
 		def parse_size(size_str):
@@ -476,7 +476,7 @@ class FindMovieTorrentFile(APIView):
 
 			return json.loads(cc.choices[0].message.content)
 		
-		if (name or site) is None:
+		if name is None or site is None:
 			return Response({"detail": "name, site must not be empty"},
 							status=status.HTTP_400_BAD_REQUEST)
 		
@@ -498,7 +498,7 @@ class FindMovieTorrentFile(APIView):
 			# query torrent api
 			params = {
 				'site': site,
-				'query': f'{name}',
+				'query': f'{name if imdbid is None else imdbid}',
 				'page': page,
 			}
 			
@@ -506,15 +506,18 @@ class FindMovieTorrentFile(APIView):
 			data = response.json()
 			
 			if data.get('error') is not None:
+				if 'not found' in data['error']:
+					return  Response({"detail": data['error']}, status=status.HTTP_404_NOT_FOUND)
 				return Response({"detail": data['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 			
 			if not total_pages:
-				# NOTE: no way to get total pages when using yts, hardcode to 20
+				# NOTE: no way to get total pages when using yts, hardcode to 5
 				# In the event of total_pages being too big and `page` overflows
 				# the loop will just continue and result will be empty
-				total_pages = 20
+				total_pages = 5
 
 			# match titles with LLM
+			data['data'] = list(filter(lambda x: 'name' in x, data['data']))
 			page_titles = [entry['name'] for entry in data['data']]
 			while len(page_titles) > 0:
 				prompt_output = matchTitles(page_titles)

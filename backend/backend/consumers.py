@@ -170,9 +170,11 @@ class SignalConsumer(AsyncConsumer):
                 async with self.lock:
                     # send socket message to inform frontend on path name so they can save to db
                     # unessacary indirection, better way is to save it directly here
+                    final_media_path = f"{imdb_id}/{media.path}"
+                    # TODO: send this only after media is fully downloaded
                     await self.send({
                         "type": "websocket.send",
-                        "text": f"{token}|info|{imdb_id}/{media.path}",
+                        "text": f"{token}|info|{final_media_path}",
                     })
                     self.current_torrenting_media = media
 
@@ -331,15 +333,15 @@ class SignalConsumer(AsyncConsumer):
             # wait for some time for client to recv
             # NOTE: for good practice, we should return here and use another message as ACK, but
             # this can do for now.
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
 
             # check video not available flag
             media_file_path = None
             if "VNA" in flags:
-                # magnet = data_sections[4]
-                # imdb_id = data_sections[7]
-                imdb_id = 69420
-                magnet = "magnet:?xt=urn:btih:77BD6C1F4CFE1C59B29E571623956F17553594A0&tr=udp%3A%2F%2Ftracker.moeking.me%3A6969%2Fannounce&tr=udp%3A%2F%2Fwww.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.bitsearch.to%3A1337%2Fannounce&dn=%5BBitsearch.to%5D+Invincible.2021.S02E07.720p.WEB.x265-MiNX%5BTGx%5D"
+                magnet = data_sections[4]
+                imdb_id = data_sections[7]
+                # imdb_id = 69420
+                # magnet = "magnet:?xt=urn:btih:77BD6C1F4CFE1C59B29E571623956F17553594A0&tr=udp%3A%2F%2Ftracker.moeking.me%3A6969%2Fannounce&tr=udp%3A%2F%2Fwww.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.bitsearch.to%3A1337%2Fannounce&dn=%5BBitsearch.to%5D+Invincible.2021.S02E07.720p.WEB.x265-MiNX%5BTGx%5D"
                 task = asyncio.create_task(self.stream_torrent(magnet, imdb_id, token))
                 self.local_background_tasks.add(task)
                 task.add_done_callback(self.local_background_tasks.discard)
@@ -351,7 +353,7 @@ class SignalConsumer(AsyncConsumer):
                     time_left -= 1
                     async with lock:
                         if self.current_torrenting_media != None:
-                            media_file_path = self.current_torrenting_media.path
+                            media_file_path = f"{imdb_id}/{self.current_torrenting_media.path}"
                             break
                         else :
                             if time_left == 0:
@@ -453,8 +455,8 @@ class SignalConsumer(AsyncConsumer):
             })
         elif msg_type == "custom_sub":
             imdb_id = data_sections[3]
-            # download_link_w_lang = data_sections[2]
-            download_link_w_lang = "https://sub-scene.com/download/3353927@en"
+            download_link_w_lang = data_sections[2]
+            # download_link_w_lang = "https://sub-scene.com/download/3353927@en"
             download_link,lang = download_link_w_lang.split('@')
             # imdb_id = 69420
             task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
