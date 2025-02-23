@@ -258,6 +258,7 @@ export default function Watch() {
   const [subLang, setSubLang] = useState<string | null>(null)
   const [subPath, setSubPath] = useState<string | null>(null)
   const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/');
+  const [downloadingSub, setDownloadingSub] = useState(false);
 
   // init RTC peer when ws is connected
   useEffect(() => {
@@ -325,18 +326,29 @@ export default function Watch() {
 
   // handle manual download of subtitle
   useEffect(() => {
-    if (!subLang || !video || readyState != ReadyState.OPEN || !imdbid) {
+    if (!subLang || !video || readyState != ReadyState.OPEN || !imdbid || downloadingSub) {
       return 
     }
     
     if ((subLang == "en" && video.en_sub_file_name == "") || (subLang == "bm" && video.bm_sub_file_name == "")){
-      fetch(`http://localhost:3000/subscene_dl?imdbid=${imdbid}&lang=${subLang}`)
-      .then(data => data.json())
+      setDownloadingSub(true)
+      fetch(`http://localhost:3000/subscene_dl?imdbid=${imdbid}&lang=${subLang}a`)
       .then(data => {
-        sendMessage(`pass|custom_sub|${data['data']}|${video.tmdb_id}|||||`)
+        if (data.status != 200)
+        {
+          alert(`subtitle not found for ${subLang}`)
+          setDownloadingSub(false)
+          Promise.reject('subtitle not found for ${subLang}');
+        }
+        return data.json()
+      })
+      .then(data => {
+        console.log(data)
+        sendMessage(`pass|custom_sub|${data['data']}@${subLang}|${video.tmdb_id}|||||`)
       })
       .catch(err => console.log(err))
-    
+    }
+    else {
       if (subLang == "en") setSubPath(video.en_sub_file_name)
       else setSubPath(video.bm_sub_file_name)
     }
@@ -415,9 +427,25 @@ export default function Watch() {
       alert(message)
     }
     if (type == "custom_sub") {
-      setSubPath(`http://localhost:8000/media/subtitles/${imdbid}${subLang}.vtt`)
-      
+      // NOTE: video should not be null already here.
+      const sub_path = `http://localhost:8000/media/subtitles/${video?.tmdb_id}${subLang}.vtt`
+      setSubPath(sub_path)
+      setDownloadingSub(false)
+
       // update model here
+      const body = subLang == "en" ? { en_sub_file_name : sub_path } : { bm_sub_file_name: sub_path };
+      fetch(`http://localhost:8000/api/videos/${id}`,{
+        method: "PATCH",
+        credentials: 'include',
+        headers : {"Content-Type": "application/json"},
+        body: JSON.stringify(body)
+      })
+      .then((data) => data.json())
+      .then((body) => {
+        if (subLang == "en") setSubPath(body.en_sub_file_name)
+        else setSubPath(body.bm_sub_file_name)
+      })
+      .catch((e) => console.error(e))
     }
   }, [lastMessage])
   
@@ -426,14 +454,14 @@ export default function Watch() {
       <Header />
       <div className="flex flex-col justify-center lg:py-10 lg:px-16 mb-auto space-y-4 lg:space-y-8">
         <div className="flex flex-col lg:flex-row space-x-8 h-full">
-          <iframe className="w-full lg:w-[65%] aspect-video bg-black text-black lg:rounded-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ"/>
+          <iframe className="w-full lg:w-[65%] aspect-video bg-black text-black lg:rounded-xl"/>
           {
             !subLang?
             <div className="animate-pulse h-10 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
             :
             <SubtitleLocaleSelector
-            className="disabled w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
-          border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none"
+            className={`${downloadingSub? 'disabled' : ''} disabled w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+          border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none`}
             curr_lang={subLang}
             onChange={(new_lang) => setSubLang(new_lang)}/>
           }

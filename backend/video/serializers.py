@@ -26,14 +26,19 @@ class VideoSerializer(serializers.Serializer):
 
 	def update(self, instance, validated_data):
 		# instance.name = validated_data.get('name', instance.name)
-		instance.overview = validated_data.get('overview', instance.name)
-		instance.watched_by = validated_data.get('watched_by', instance.watched_by)
+		instance.overview = validated_data.get('overview', instance.overview)
 		instance.tmdb_id = validated_data.get('tmdb_id', instance.tmdb_id)
 		instance.type = validated_data.get('type', instance.type)
 		instance.last_watched_time = validated_data.get('last_watched_time', instance.last_watched_time)
-		instance.en_sub_filename = validated_data.get('en_sub_filename', instance.en_sub_filename)
-		instance.bn_sub_filename = validated_data.get('bm_sub_filename', instance.bm_sub_filename)
-		instance.torrent_filename = validated_data.get('torrent_filename', instance.torrent_filename)
+		instance.en_sub_file_name = validated_data.get('en_sub_file_name', instance.en_sub_file_name)
+		instance.bn_sub_file_name = validated_data.get('bm_sub_file_name', instance.bm_sub_file_name)
+		instance.torrent_file_name = validated_data.get('torrent_file_name', instance.torrent_file_name)
+
+		# handling many to many for watched_by
+		watched_by_data = validated_data.get('watched_by', None)
+		if watched_by_data is not None:
+			movies = Video.objects.filter(id__in=watched_by_data)
+			instance.watched_by.set(movies)
 
 		instance.save()
 		return instance
