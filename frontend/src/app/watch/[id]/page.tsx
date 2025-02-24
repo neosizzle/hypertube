@@ -406,14 +406,14 @@ export default function Watch() {
   
   // handle init RTC peer handshake, with either magnet link or torrent path
   useEffect(() => {
-    if (!video || (magnet && video.torrent_file_name != '') || (!magnet && video.torrent_file_name == '') || !initHandshakeData) return
+    if (!video || (magnet && video.torrent_file_name != '') || (!magnet && video.torrent_file_name == '') || !initHandshakeData || !user) return
 
     // if we have a magnet, send handshake with magnet link
     if (magnet)
-      sendMessage(`pass|handshake|${initHandshakeData}|VNASA|${magnet}|subscne|mp4|${video.tmdb_id}|`)
+      sendMessage(`pass|handshake|${initHandshakeData}|VNASA|${magnet}|subscne|mp4|${video.tmdb_id}|${user.prefered_stream_dimensions}`)
     else
-      sendMessage(`pass|handshake|${initHandshakeData}|VASA|${video.torrent_file_name}|subscne|mp4|${video.tmdb_id}|`)
-  }, [video, magnet, initHandshakeData])
+      sendMessage(`pass|handshake|${initHandshakeData}|VASA|${video.torrent_file_name}|subscne|mp4|${video.tmdb_id}|${user.prefered_stream_dimensions}`)
+  }, [video, magnet, initHandshakeData, user])
 
   // handle get streaming metadata
   useEffect(() => {
@@ -430,7 +430,7 @@ export default function Watch() {
     })
     .catch((error) => console.error(error))
   
-    // mark current video as watched
+    // TODO: mark current video as watched
   }, [id, user])
 
   useEffect(() => {

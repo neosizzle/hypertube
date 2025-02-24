@@ -184,6 +184,18 @@ export default function Login() {
       console.error(error)
     })
   }, [])
+
+  // check if user already logged in
+   useEffect(() => {
+    fetch(`http://localhost:8000/api/users/me`, {
+      method: 'GET',
+      credentials: 'include',
+    }).then((data) => {
+      if (data.ok) {
+        router.push('/browse')
+      }
+    })
+  }, [])
   
   useEffect(() => {
     if (success) router.push('/browse')

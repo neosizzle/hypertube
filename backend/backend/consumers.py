@@ -126,6 +126,12 @@ lock = asyncio.Lock()
 
 ACCEPTED_MSG_TYPES = ["handshake", "video", "ping", "custom_sub"]
 ACCEPTED_FLAGS = ["VASA", "VNASNA", "VNASA", "VASNA"]
+ACCEPTED_SIZE_FLAGS = ["", "0", "1", "2"]
+VIDEO_SIZE_MAP = {
+    '0': "858x480",
+    '1': "1280x720",
+    '2': "1920x1080"
+}
 # 1 new connection will create 1 new consumer
 class SignalConsumer(AsyncConsumer):
 
@@ -298,12 +304,13 @@ class SignalConsumer(AsyncConsumer):
         if msg_type == "handshake":
             handshake_data = data_sections[2]
             flags = data_sections[3]
+            video_size = data_sections[8]
 
             # validate flags are accepted
-            if flags not in ACCEPTED_FLAGS:
+            if flags not in ACCEPTED_FLAGS or video_size not in ACCEPTED_SIZE_FLAGS:
                 await self.send({
                     "type": "websocket.send",
-                    "text": f"{token}|error|Invalid flags: {flags}",
+                    "text": f"{token}|error|Invalid flags: {flags} or video size {video_size}",
                 })
                 await self.send({
                     "type": "websocket.close",
@@ -421,9 +428,8 @@ class SignalConsumer(AsyncConsumer):
                 return
             
             player = MediaPlayer(file_path)
-            video_size = data_sections[8]
             if video_size != '':
-                player = MediaPlayer(file_path, loop=True, options={'video_size': video_size})
+                player = MediaPlayer(file_path, options={'video_size': VIDEO_SIZE_MAP[video_size],})
             
             if player and player.audio:
                 pc.addTrack(player.audio)
