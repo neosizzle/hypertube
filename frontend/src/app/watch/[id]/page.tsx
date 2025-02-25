@@ -13,6 +13,7 @@ import { useTranslations } from "next-intl"
 import { locales } from "@/i18n/config"
 import { Video } from "../../../types/Video"
 import { sub } from "motion/react-client"
+import Spinner from "../../../components/Spinner"
 
 const enter = {
   opacity: 1,
@@ -231,20 +232,20 @@ function StatusDisplay({ video, subPath, resolvingMagnet, torrent_file_name, str
   
   return (
     <div>
-      <div>
-        Video ... {video ? 'OK' : 'waiting..'}
+      <div className="flex">
+        Video ... {video ? 'OK' : <Spinner/>}
       </div>
   
-      <div>
+      <div className="flex">
         subPath ... {subPath ? 'OK' : 'waiting..'}
       </div>
       
-      <div>
+      <div className="flex">
         resolvingMagnet ... {!resolvingMagnet || torrent_file_name ? 'OK' : 'waiting..'}
       </div>
       
-      <div>
-        stream ... {stream ? 'OK' : 'waiting..'}
+      <div className="flex">
+        stream ... {stream ? 'OK' :  <Spinner/>}
       </div>
     </div>
   )
@@ -517,7 +518,31 @@ export default function Watch() {
           ref={videoRef}
           className="w-full lg:w-[90%] aspect-video bg-black text-black lg:rounded-xl"
           crossOrigin='anonymous'
-        ></video>
+          >
+          {
+            subLang == 'en' && subPath?
+            <track
+              label="English"
+              kind="subtitles"
+              srcLang='en'
+              src={subPath}
+              default={true}
+
+            /> : <></>
+          }        
+
+          {
+            subLang == 'ms' && subPath?
+            <track
+              label="Malay"
+              kind="subtitles"
+              srcLang='ms'
+              src={subPath}
+              default={true}
+            /> : <></>
+          }        
+
+          </video>
         </div>
         <div className="flex flex-col md:flex-row justify-between">
           <VideoInfo tmbd_id={tmdbid} onObtainImdbId={setImdbid} onObtainName={setVideoName}/>

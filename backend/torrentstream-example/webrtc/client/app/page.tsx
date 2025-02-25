@@ -47,6 +47,7 @@ export default function Home() {
     peer.on('signal', (data) => {
       // we are the initiator here, this would get called after creation OR ack video
       // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
+      console.log(data)
       const data_str = JSON.stringify(data)
       if (!connectedStateRef.current)
         sendMessage(`pass|handshake|${data_str}|VASNA|src.mov|subscne|mkv|imdb_id|2`)
