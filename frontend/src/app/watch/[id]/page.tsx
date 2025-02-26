@@ -430,8 +430,12 @@ export default function Watch() {
       setTmdbid(data.tmdb_id)
     })
     .catch((error) => console.error(error))
-  
-    // TODO: mark current video as watched
+
+    // mark video as watched
+    fetch(`http://localhost:8000/api/videos/watched/${id}`, { method : 'POST', credentials: 'include' })
+    .then(() => console.log("video marked as watched"))
+    .catch((error) => console.error(error))
+      
   }, [id, user])
 
   useEffect(() => {

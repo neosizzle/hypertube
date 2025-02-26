@@ -22,10 +22,12 @@ from .serializers import VideoSerializer, CommentSerializer
 class VideoList(APIView):
 	def get(self, request, format=None):
 		# NOTE: Dont need ot handle sorting right...?
-		name = request.query_params.get('name', "")
+		# name = request.query_params.get('name', "")
 
 		# filter data
-		videos = Video.objects.filter(name__startswith=name).order_by('name')
+		# videos = Video.objects.filter(name__startswith=name).order_by('name')
+
+		videos = Video.objects.all()
 		
 		# paginate data
 		paginator = LimitOffsetPagination()

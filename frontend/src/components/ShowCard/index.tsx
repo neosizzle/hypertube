@@ -27,9 +27,10 @@ function CardInfoExtension({ info } : { info: ShortInfo }) {
   )
 }
 
-export default function ShowCard({info, position, onClick } : { info: ShortInfo, position?: 'left' | 'right' | 'center', onClick?: () => void }) {
+export default function ShowCard({info, position, isWatched, onClick } : { info: ShortInfo, position?: 'left' | 'right' | 'center', isWatched: boolean, onClick?: () => void }) {
   
   const [hover, setHover] = useState(false)
+  const c = useTranslations('Common')
 
   return (
     <motion.div className="w-auto md:aspect-video group z-0 relative"
@@ -39,6 +40,17 @@ export default function ShowCard({info, position, onClick } : { info: ShortInfo,
     whileHover={{scale : 1.5, zIndex: "1", transition: {duration: 0.5, ease: "backOut"}}}
     onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
     onClick={onClick}>
+      {
+        isWatched?
+        <>
+        <div className="absolute top-0 left-0 bg-black w-full h-full opacity-25 text-center"></div>
+        <div className="absolute flex justify-center items-center w-full h-full"> <span className="text-white">{c('watched')}</span></div>
+        </>
+        :
+        <>
+        </>
+      }
+      
       <Image src={info.poster_path || '/dicsord.svg'} alt={info.title || 'test'} width={1000} height={1000}
       className="w-full h-full -z-10 object-cover rounded-lg group-hover:rounded-b-none"/>
       <div className="absolute bottom-[10%] p-2 px-4 z-10 text-white font-bold text-xs lg:text-lg inline-block">{info.title}</div>

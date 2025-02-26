@@ -11,7 +11,7 @@ export type User = {
 	email: string | null
 	profile_picture: string,
 	username: string
-	watch_videos: [Video]
+	watched_videos: [Video]
 	prefered_stream_dimensions: number
   }
   

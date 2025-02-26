@@ -15,7 +15,8 @@
 		"firstName": "First Name",
 		"lastName": "Last Name",
 		"movie": "Movie",
-		"tv": "TV Series"
+		"tv": "TV Series",
+		"watched": "Watched"
 	},
 
 	"LoginPage": {

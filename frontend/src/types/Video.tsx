@@ -1,5 +1,3 @@
-import { User } from "./User"
-
 export type Video = {
 	id: number
 	en_sub_file_name: string
@@ -11,7 +9,7 @@ export type Video = {
 	tmdb_id: number
 	type: string,
 	torrent_file_name: string
-	watch_videos: [User]
+	watched_by: [number]
   }
   
   

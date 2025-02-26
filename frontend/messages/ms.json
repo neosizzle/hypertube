@@ -15,7 +15,8 @@
 		"firstName": "Nama Pertama",
 		"lastName": "Nama Keluarga",
 		"movie": "Filem",
-		"tv": "Siri TV"
+		"tv": "Siri TV",
+		"watched": "Ditonton"
 	},
 
 	"LoginPage": {
