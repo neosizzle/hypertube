@@ -1,9 +1,7 @@
 import { locales } from "@/i18n/config"
 import { setUserLocale } from "@/services/locale"
 import { useLocale, useTranslations } from "next-intl"
-import { useState } from "react"
-
-
+import { useEffect, useState } from "react"
 
 export default function LocaleSelector({ className }: { className?: string }) {
 
@@ -14,6 +12,22 @@ export default function LocaleSelector({ className }: { className?: string }) {
     setUserLocale(locale)
     setSelectedLocale(locale)
   }
+
+  useEffect(() => {
+
+    fetch('http://localhost:8000/api/users/me', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        lang: selectedLocale
+      })
+    }).catch((error) => {
+      console.error(error);
+    })
+  }, [selectedLocale])
 
   return (
     <select className={className}
