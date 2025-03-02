@@ -159,7 +159,6 @@ class SignalConsumer(AsyncConsumer):
             i += 1
 
     # takes a magnet link as input
-    # TODO: check if the default file is mkv, ocme up w/ a way to handle that
     async def stream_torrent(self, magnet_link, imdb_id, token):
         # Create a session, and add a torrent
         session = TorrentSession()

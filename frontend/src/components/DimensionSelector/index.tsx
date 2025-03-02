@@ -1,4 +1,4 @@
-export const PREFFERED_DIMS_MAP = ["Small (858x480)", "Medium (1280x720)", "Large (1920x1080)"]
+export const PREFFERED_DIMS_MAP = ["420p (858x480)", "720p (1280x720)", "1080p (1920x1080)"]
 
 export default function DimensionSelector({ className, preferredDims, onChange }: { className?: string, preferredDims: number, onChange: (value: number) => void }) {
 

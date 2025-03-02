@@ -50,7 +50,7 @@ export default function Home() {
       console.log(data)
       const data_str = JSON.stringify(data)
       if (!connectedStateRef.current)
-        sendMessage(`pass|handshake|${data_str}|VASNA|src.mov|subscne|mkv|imdb_id|2`)
+        sendMessage(`pass|handshake|${data_str}|VNASNA|magnet:?xt=urn:btih:4b37ff0e0edc511bd96448c0039c0f7a9913ac4e&dn=%5BJudas%5D%20Kimi%20no%20Na%20Wa.%20%28Your%20Name.%29%20%5BBD%202160p%204K%20UHD%5D%5BHEVC%20x265%2010bit%5D%5BDual-Audio%5D%5BMulti-Subs%5D&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce|subscne|mkv|imdb_id|2`)
 
       // for ack video, 'data will contain ack message
       else

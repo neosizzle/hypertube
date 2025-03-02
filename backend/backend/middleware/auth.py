@@ -49,6 +49,7 @@ class AuthMiddleware:
 			if request.app_user is not None:
 				return None
 		except AttributeError: # app user is not in request
+
 			return HttpResponseForbidden("Token invalid")
 
 	# Validate token and user here

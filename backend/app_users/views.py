@@ -31,7 +31,7 @@ GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize'
 GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 GITHUB_IDEN_URL = 'https://api.github.com/user'
 
-REDIRECT_URI = 'http://localhost:3000/login'
+REDIRECT_URI = 'http://localhost:3000/redirect'
 
 class OAuthProvider(APIView):
 	ACCEPTED_PROVIDERS = ['42', 'discord', 'github']
