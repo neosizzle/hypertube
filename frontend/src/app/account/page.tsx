@@ -6,10 +6,11 @@ import Modal from '@/components/modal';
 import { motion } from "motion/react";
 import Image from "next/image"
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import LocaleSelector from "@/components/LocaleSelector";
 import DimensionSelector from "../../components/DimensionSelector";
+import { SearchContext } from "@/providers/SearchProvider";
 
 const enter = {
   opacity: 1,
@@ -117,7 +118,7 @@ export default function Account() {
   const [profilePicURL, setProfilePicURL] = useState('')
   const [preferredDims, setPreferredDims] = useState(1)
   const [isEdit, setEdit] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [updateSuccess, setUpdateSuccess] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const router = useRouter()
@@ -299,10 +300,10 @@ export default function Account() {
         <div className="flex flex-col space-y-4 px-2 lg:px-0">
           <div className="text-black text-xl font-medium">{t('accountSettings')}</div>
           <button className="w-48 h-8 lg:h-10 bg-red-500 rounded-lg p-1 font-medium font-white text-sm lg:text-lg
-                  hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {setIsOpen(true)}}>{t('deleteAccount')}</button>
+                  hover:scale-105 hover:drop-shadow-sm transition-all" onClick={() => {setIsDeleteModalOpen(true)}}>{t('deleteAccount')}</button>
         </div>
       </div>
-      <DeleteAccountConfirmationModal open={isOpen} onClose={() => setIsOpen(false)} />
+      <DeleteAccountConfirmationModal open={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
       <Footer />
     </div>
   )

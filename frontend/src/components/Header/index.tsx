@@ -118,6 +118,8 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
   const toggleHover = () => {setIsHover(!isHover)}
   const router = useRouter()
   const t = useTranslations('Header')
+  const { searchQuery, setSearchQuery, isOpen, setIsOpen } = useContext(SearchContext);
+  const [redirect, setRedirect] = useState('')
 
   const enter = {
     opacity: 1,
@@ -149,6 +151,19 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
     })
   }
 
+  const handleClick = (route: string) => () => {
+    setRedirect(route)
+    setSearchQuery('')
+    setIsOpen(false)
+  }
+
+  // close search bar before redirect
+  useEffect(() => {
+    if (searchQuery === '' && isOpen === false && redirect !== '') {
+      router.push(redirect)
+    }
+  }, [searchQuery, isOpen, router, redirect])
+
   return (
     <div className="flex items-center relative">
       <motion.div
@@ -163,8 +178,12 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
           animate={isHover ? enter : exit}
           className="absolute top-16 right-0 bg-white rounded-lg text-black z-10">
             {isLoggedIn ? <ul className="p-4 space-y-4 border-2 rounded-lg w-48">
-              <li className="hover:text-gray-500"><Link href="/account">{t('account')}</Link></li>
-              <li className="hover:text-gray-500"><button onClick={handleLogOut}>{t('logOut')}</button></li>
+              <li className="hover:text-gray-500">
+                <button onClick={handleClick('/account')}>{t('account')}</button>
+              </li>
+              <li className="hover:text-gray-500">
+                <button onClick={handleLogOut}>{t('logOut')}</button>
+              </li>
             </ul> : <ul className="p-4 space-y-4 border-2 rounded-lg w-32">
               <li className="hover:text-gray-500"><Link href="/login">{t('logIn')}</Link></li>
             </ul>}
@@ -177,10 +196,12 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
 export default function Header() {
   
   const router = useRouter()
-  const { setSearchQuery, setIsOpen } = useContext(SearchContext);
   const [profilePicURL, setProfilePicURL] = useState('http://localhost:8000/media/profile_pics/default.png')
   const [login, setLogin] = useState(true)
   const t = useTranslations('Header')
+
+  const { searchQuery, setSearchQuery, isOpen, setIsOpen } = useContext(SearchContext);
+  const [redirect, setRedirect] = useState('')
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/users/me`, {
@@ -194,10 +215,18 @@ export default function Header() {
   }, [])
 
   const handleClick = (route: string) => () => {
+    setRedirect(route)
     setSearchQuery('')
     setIsOpen(false)
-    router.push(route)
   }
+
+  // close search bar before redirect
+  useEffect(() => {
+    if (searchQuery === '' && isOpen === false && redirect !== '') {
+      console.log(redirect)
+      router.push(redirect)
+    }
+  }, [searchQuery, isOpen, router, redirect])
 
   return (
     
