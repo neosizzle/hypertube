@@ -50,7 +50,7 @@ export default function Home() {
       console.log(data)
       const data_str = JSON.stringify(data)
       if (!connectedStateRef.current)
-        sendMessage(`pass|handshake|${data_str}|VASNA|src.mov|subscne|mkv|imdb_id|2`)
+        sendMessage(`pass|handshake|${data_str}|VNASNA|src.mov|subscne|mkv|imdb_id|2`)
 
       // for ack video, 'data will contain ack message
       else

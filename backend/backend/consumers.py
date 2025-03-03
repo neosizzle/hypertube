@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.conf import settings
 from torrent import TorrentSession
 
+import re
 import os
 import asyncio
 import json
@@ -177,7 +178,6 @@ class SignalConsumer(AsyncConsumer):
                     # send socket message to inform frontend on path name so they can save to db
                     # unessacary indirection, better way is to save it directly here
                     final_media_path = f"{imdb_id}/{media.path}"
-                    # TODO: send this only after media is fully downloaded
                     await self.send({
                         "type": "websocket.send",
                         "text": f"{token}|info|{final_media_path}",
@@ -230,6 +230,41 @@ class SignalConsumer(AsyncConsumer):
         self.subtitle_download_done = True
         return
     
+    async def mkv_reduce_stream(self, in_name, out_name, token):
+        print(f"ffmpeg conversion start ffmpeg -i '{in_name}' -map 0:a:0 -map 0:v:0 -c copy '{out_name}'")
+        cmd =  f"ffmpeg -i '{in_name}' -map 0:a:0 -map 0:v:0 -s 1280x720 -c copy '{out_name}' -y"
+        proc = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+        stdout, stderr = await proc.communicate()
+
+        print(f'[ffmpeg exited with {proc.returncode}]')
+        if proc.returncode != 0:
+            await self.send({
+                    "type": "websocket.send",
+                    "text": f"{token}|error|mkv stream reducing error",
+                })
+            if stdout:
+                print(f'[stdout]\n{stdout.decode()}')
+            if stderr:
+                print(f'[stderr]\n{stderr.decode()}')
+
+    async def ffmpeg_convert(self, in_name, out_name, token):
+        try:
+            await asyncio.to_thread(ffmpeg
+                                    .input(in_name)
+                                    .output(out_name, y=None, video_bitrate=17000, audio_bitrate=17000, r=30, ac=2, s="1280x720", speed=12, acodec="libopus", vcodec="libvpx",)
+                                    .run, quiet=False)
+        except Exception as e:
+            print(e)
+            await self.send({
+                    "type": "websocket.send",
+                    "text": f"{token}|error|{e}",
+                })
+            return
+
     async def mp4_to_mkv(self, mp4_path, out_name, token):
         try:
             await asyncio.to_thread(ffmpeg.input(mp4_path).output(out_name, y=None).run, quiet=True)
@@ -345,10 +380,10 @@ class SignalConsumer(AsyncConsumer):
             # check video not available flag
             media_file_path = None
             if "VNA" in flags:
-                magnet = data_sections[4]
-                imdb_id = data_sections[7]
-                # imdb_id = 69420
-                # magnet = "magnet:?xt=urn:btih:77BD6C1F4CFE1C59B29E571623956F17553594A0&tr=udp%3A%2F%2Ftracker.moeking.me%3A6969%2Fannounce&tr=udp%3A%2F%2Fwww.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopentracker.i2p.rocks%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.bitsearch.to%3A1337%2Fannounce&dn=%5BBitsearch.to%5D+Invincible.2021.S02E07.720p.WEB.x265-MiNX%5BTGx%5D"
+                # magnet = data_sections[4]
+                # imdb_id = data_sections[7]
+                imdb_id = 69420
+                magnet = "magnet:?xt=urn:btih:4b37ff0e0edc511bd96448c0039c0f7a9913ac4e&dn=%5BJudas%5D%20Kimi%20no%20Na%20Wa.%20%28Your%20Name.%29%20%5BBD%202160p%204K%20UHD%5D%5BHEVC%20x265%2010bit%5D%5BDual-Audio%5D%5BMulti-Subs%5D&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce"
                 task = asyncio.create_task(self.stream_torrent(magnet, imdb_id, token))
                 self.local_background_tasks.add(task)
                 task.add_done_callback(self.local_background_tasks.discard)
@@ -418,6 +453,35 @@ class SignalConsumer(AsyncConsumer):
             #         print(f"FFMPEG waiting for mkv conversion to finish")
             #     media_file_path = os.path.splitext(media_file_path)[0] + ".mkv"
 
+            # # since mkv is a container of multiple streams and we might OOM
+            # # convert the media file to single stream mkv before streaming
+            # original_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
+            # name, ext = os.path.splitext(original_path)
+            # if ext == ".mkv":
+            #     file_path_tokens = original_path.split("/")
+            #     file_path_tokens[-1] = "converted.mkv"
+            #     out_name = "/".join(file_path_tokens)
+
+            #     task = asyncio.create_task(self.mkv_reduce_stream(original_path, out_name, token))
+            #     self.local_background_tasks.add(task)
+            #     task.add_done_callback(self.local_background_tasks.discard)
+
+            #     # NOTE: wait for conversion to at least complete header. bad practice for arb wait here
+            #     # TODO: implement dynamic progress checking. (Low priority)
+            #     # maybe wait for webm file size to be atleast half to torrent total size?
+            #     await asyncio.sleep(5)
+
+            #     file_path_tokens = media_file_path.split("/")
+            #     file_path_tokens[-1] = "converted.mkv"
+            #     media_file_path = "/".join(file_path_tokens)
+                
+            #     # send info message to client, if we are in this branch, this sould be our first time sending
+            #     final_media_path = out_name
+            #     await self.send({
+            #         "type": "websocket.send",
+            #         "text": f"{token}|info|{final_media_path}",
+            #     })
+
             file_path = os.path.join(settings.MEDIA_ROOT, f'torrents/{media_file_path}')
 
             if not os.path.exists(file_path):
@@ -427,6 +491,7 @@ class SignalConsumer(AsyncConsumer):
                 })
                 return
             
+            print(f"===streaming {file_path}")
             player = MediaPlayer(file_path)
             if video_size != '':
                 player = MediaPlayer(file_path, options={'video_size': VIDEO_SIZE_MAP[video_size],})

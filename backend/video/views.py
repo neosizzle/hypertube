@@ -504,7 +504,9 @@ class FindMovieTorrentFile(APIView):
 				'page': page,
 			}
 			
-			response = requests.get(f"{self.TORRENT_API_ENDPOINT}?{urlencode(params)}")
+			torrent_query_url = f"{self.TORRENT_API_ENDPOINT}?{urlencode(params)}"
+			print(f"querying {torrent_query_url}")
+			response = requests.get(torrent_query_url)
 			data = response.json()
 			
 			if data.get('error') is not None:
