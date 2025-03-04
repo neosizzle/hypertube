@@ -190,7 +190,7 @@ class SignalConsumer(AsyncConsumer):
             
     # takes a subscene download link as input, will set 
     # self.subtitle_download_done once file is ready to read from disk.
-    async def stream_subtitle(self, download_link, imdb_id, lang):
+    async def stream_subtitle_subscene(self, download_link, imdb_id, lang):
         self.subtitle_download_done = False
         save_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}.zip')
         extract_folder = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}/')
@@ -198,7 +198,7 @@ class SignalConsumer(AsyncConsumer):
         convert_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}{lang}.vtt')
         response = requests.get(download_link)
         if response.status_code != 200:
-            print(f"ERROR [stream_subtitle] Subtitle download failed wtih code {response.status_code}")
+            print(f"ERROR [stream_subtitle_subscene] Subtitle download failed wtih code {response.status_code}")
             return
         
         # write to zip file
@@ -225,6 +225,23 @@ class SignalConsumer(AsyncConsumer):
             os.rmdir(extract_folder)
             os.remove(zip_ref.filename)
             os.remove(extract_path)
+
+        self.subtitle_download_done = True
+        return
+    
+    # takes a opensub download link as input, will set 
+    # self.subtitle_download_done once file is ready to read from disk.
+    async def stream_subtitle_opensub(self, download_link, imdb_id, lang):
+        self.subtitle_download_done = False
+        save_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{imdb_id}{lang}.webvtt')
+        response = requests.get(download_link)
+        if response.status_code != 200:
+            print(f"ERROR [stream_subtitle_opensub] Subtitle download failed wtih code {response.status_code}")
+            return
+        
+        # write to zip file
+        with open(save_path, 'wb') as f:
+            f.write(response.content)
 
         self.subtitle_download_done = True
         return
@@ -379,10 +396,10 @@ class SignalConsumer(AsyncConsumer):
             # check video not available flag
             media_file_path = None
             if "VNA" in flags:
-                # magnet = data_sections[4]
-                # imdb_id = data_sections[7]
-                imdb_id = 69420
-                magnet = "magnet:?xt=urn:btih:4b37ff0e0edc511bd96448c0039c0f7a9913ac4e&dn=%5BJudas%5D%20Kimi%20no%20Na%20Wa.%20%28Your%20Name.%29%20%5BBD%202160p%204K%20UHD%5D%5BHEVC%20x265%2010bit%5D%5BDual-Audio%5D%5BMulti-Subs%5D&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce"
+                magnet = data_sections[4]
+                imdb_id = data_sections[7]
+                # imdb_id = 69420
+                # magnet = "magnet:?xt=urn:btih:4b37ff0e0edc511bd96448c0039c0f7a9913ac4e&dn=%5BJudas%5D%20Kimi%20no%20Na%20Wa.%20%28Your%20Name.%29%20%5BBD%202160p%204K%20UHD%5D%5BHEVC%20x265%2010bit%5D%5BDual-Audio%5D%5BMulti-Subs%5D&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce"
                 task = asyncio.create_task(self.stream_torrent(magnet, imdb_id, token))
                 self.local_background_tasks.add(task)
                 task.add_done_callback(self.local_background_tasks.discard)
@@ -414,7 +431,7 @@ class SignalConsumer(AsyncConsumer):
             #     download_link_w_lang = "https://sub-scene.com/download/3353927@EN"
             #     download_link,lang = download_link_w_lang.split('@')
             #     imdb_id = 69420
-            #     task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
+            #     task = asyncio.create_task(self.stream_subtitle_subscene(download_link, imdb_id, lang))
             #     self.local_background_tasks.add(task)
             #     task.add_done_callback(self.local_background_tasks.discard)
 
@@ -525,11 +542,11 @@ class SignalConsumer(AsyncConsumer):
             })
         elif msg_type == "custom_sub":
             imdb_id = data_sections[3]
-            download_link_w_lang = data_sections[2]
-            # download_link_w_lang = "https://sub-scene.com/download/3353927@en"
-            download_link,lang = download_link_w_lang.split('@')
             # imdb_id = 69420
-            task = asyncio.create_task(self.stream_subtitle(download_link, imdb_id, lang))
+            download_link_w_lang = data_sections[2]
+            # download_link_w_lang = "https://www.opensubtitles.com/download/A8F74F0F621F86E5E6F0681C794576A3DAAE914B960E113209A89A386D515273EB532846B98A24E7D0CF358BD23BB9073E3A17CDB351772E2240E3BF66C7AC8D8B560BD7D071EADBC838B7F21CB5422AE5FBCF7B14234699A2A9EFD937338498E2B14200FF423E9617587FC520BB3FE12F26B8271CD3488C33DC1E4491A5A24F205EF72D165C101D75F6EBE431690436D24298367BDB8C996F62CF7707F49A7F2021663769380AB3A2E07817245A0B7511E05EF40501C5607BE3D30525C92D5C34D3A7701CB5B946A0B1DB9AF61CF9D9EC793044981D0A925BC4B3DCAB6745ED09DA5642EDA23E12BD5D0337695FAD3A5A511A9891FFE362621F310190AA38218FCC397A9C8F5AF17B4F83637DC94D26/subfile/test.webvtt@en"
+            download_link,lang = download_link_w_lang.split('@')
+            task = asyncio.create_task(self.stream_subtitle_opensub(download_link, imdb_id, lang))
             self.local_background_tasks.add(task)
             task.add_done_callback(self.local_background_tasks.discard)
 

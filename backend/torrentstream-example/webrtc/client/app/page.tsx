@@ -218,14 +218,14 @@ const MediaStreamPlayer: React.FC<MediaStreamPlayerProps> = ({ stream }) => {
       label="English"
       kind="subtitles"
       srcLang='en'
-      src="http://localhost:8000/media/subtitles/69420EN.vtt"
+      src="http://localhost:8000/media/subtitles/69420EN.webvtt"
       />
 
       <track
       label="Malay"
       kind="subtitles"
       srcLang='az'
-      src="http://localhost:8000/media/subtitles/69420EN.vtt"
+      src="http://localhost:8000/media/subtitles/69420EN.webvtt"
       />
 
       </video>

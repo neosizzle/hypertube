@@ -10,14 +10,14 @@ from app_users.models import AppUser
 class VideoSerializer(serializers.Serializer):
 	id = serializers.IntegerField(read_only=True)
 	# name = serializers.CharField(max_length=100, validators=[UniqueValidator(queryset=Video.objects.all())])
-	overview = serializers.CharField(max_length=1000)
-	en_sub_file_name = serializers.CharField(max_length=100)
-	bm_sub_file_name = serializers.CharField(max_length=100)
+	overview = serializers.CharField(max_length=10000)
+	en_sub_file_name = serializers.CharField(max_length=1000)
+	bm_sub_file_name = serializers.CharField(max_length=1000)
 	watched_by = serializers.PrimaryKeyRelatedField(queryset=AppUser.objects.all(), many=True, required=False)	
 	tmdb_id = serializers.IntegerField(required=True)
 	type = serializers.CharField(max_length=5, required=True) # movie or tv
 	last_watched_time = serializers.DateTimeField(default=timezone.now)
-	torrent_file_name = serializers.CharField(max_length=100)
+	torrent_file_name = serializers.CharField(max_length=1000)
 
 	def create(self, validated_data):
 		# NOTE: NOT NULL constraint failed: video_video.torrent_id

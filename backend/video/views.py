@@ -715,7 +715,6 @@ class FromTMDB(APIView):
 	If the video is not found, create a new record in the database.
 	"""
 
-	# Note: I think this is 	
 	def get(self, request, format=None):
 		
 		tmdb_id = request.query_params.get('tmdb_id')
@@ -735,4 +734,49 @@ class FromTMDB(APIView):
 			print(f"Created new entry for tmdb id {tmdb_id}")
 	
 		return Response({"video_id": video.id, "created": created},
+						status=status.HTTP_200_OK)
+
+class FindOpensubLink(APIView):
+
+	def __init__(self, **kwargs):
+		self.api_key = os.getenv('OPENSUB_KEY')
+		self.search_url = "https://api.opensubtitles.com/api/v1/subtitles"
+		self.dl_link_url = "https://api.opensubtitles.com/api/v1/download"
+		super().__init__(**kwargs)
+
+	def get(self, request, format=None):
+		
+		imdb_id = request.query_params.get('imdb_id')
+		lang = request.query_params.get('lang')
+		
+		if not imdb_id or not lang:
+			return Response({"detail": "imdb_id and lang are required"},
+						status=status.HTTP_400_BAD_REQUEST)
+
+		http_params = {
+			'imdb_id': imdb_id,
+			'languages': lang
+		}
+
+		search_response = requests.get(f'{self.search_url}?{urlencode(http_params)}',  headers={"Api-Key":self.api_key})
+		if not search_response.ok:
+			print(search_response)
+			return Response({"detail": "opensubtitle search error"},
+						status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+		search_response = search_response.json()
+		if search_response.get('total_count') == 0:
+			return Response({"detail": "Not found"},
+						status=status.HTTP_404_NOT_FOUND)
+
+		file_id = search_response.get('data')[0].get('attributes').get('files')[0].get('file_id')
+
+		dl_response = requests.post(f'{self.dl_link_url}',  headers={ "Api-Key":self.api_key, 'Content-Type': 'application/json' }, data=json.dumps({'file_id': file_id, 'sub_format': 'webvtt'}))
+		if not dl_response.ok:
+			print(dl_response)
+			return Response({"detail": "opensubtitle download link error"},
+						status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+		dl_response = dl_response.json()
+
+		return Response({"data": dl_response.get('link'), 'test': search_response},
 						status=status.HTTP_200_OK)

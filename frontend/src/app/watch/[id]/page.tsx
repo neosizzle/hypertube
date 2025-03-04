@@ -377,7 +377,7 @@ export default function Watch() {
     
     if ((subLang == "en" && video.en_sub_file_name == "") || (subLang == "ms" && video.bm_sub_file_name == "")){
       setDownloadingSub(true)
-      fetch(`http://localhost:3000/subscene_dl?imdbid=${imdbid}&lang=${subLang}`)
+      fetch(`http://localhost:8000/api/videos/opensub_link?imdb_id=${imdbid}&lang=${subLang}`, { credentials:'include' })
       .then(data => {
         if (data.status != 200)
         {
@@ -512,7 +512,7 @@ export default function Watch() {
     }
     if (type == "custom_sub") {
       // NOTE: video should not be null already here.
-      const sub_path = `http://localhost:8000/media/subtitles/${video?.tmdb_id}${subLang}.vtt`
+      const sub_path = `http://localhost:8000/media/subtitles/${video?.tmdb_id}${subLang}.webvtt`
       setSubPath(sub_path)
       setDownloadingSub(false)
 

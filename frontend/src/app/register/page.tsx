@@ -79,7 +79,7 @@ function RegisterCard() {
     rounded-lg drop-shadow-lg px-12 lg:px-20 pb-12 pt-8 lg:pt-16 space-y-4">
       <div className="text-black text-2xl lg:text-4xl font-semibold lg:pb-3">{t('register')}</div>
       <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('username')} ref={un_ref} initial={exit} animate={enter}/>
-      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('password')} ref={pw_ref} initial={exit} animate={enter}/>
+      <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('password')} ref={pw_ref} initial={exit} animate={enter} type="password"/>
       <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('email')} ref={email_ref} initial={exit} animate={enter}/>
       <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('firstName')} ref={fn_ref} initial={exit} animate={enter}/>
       <motion.input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('lastName')} ref={ln_ref} initial={exit} animate={enter}/>

@@ -81,6 +81,7 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
         placeholder={c('password')} ref={pw_ref}
         initial={exit}
         animate={enter}
+        type="password"
         />
         {signInFailed && <motion.div className="flex justify-center items-center text-red-500 text-[0.6rem] lg:text-sm"
         initial={exit}

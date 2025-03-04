@@ -23,7 +23,6 @@ class AuthMiddleware:
 		("GET", r"^/api/torrent/tv/search$"),
 		("GET", r"^/api/torrent/movie/search$"),
 		("GET", r"^/api/videos/fromTMDB$"),
-		("GET", r"^/api/videos/stream$"),
 		]
 	admin_path = "/admin" # allow all admin paths to pass, they use another auth system
 	media_path = "/media" # allow all media paths to pass, they are publoic

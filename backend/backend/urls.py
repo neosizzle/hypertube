@@ -42,6 +42,8 @@ urlpatterns = [
     path('api/videos/watched/<int:pk>', video_views.VideoWatchedDetail.as_view()),
     path('api/videos/<int:pk>', video_views.VideoDetail.as_view()),
     path('api/videos/fromTMDB', video_views.FromTMDB.as_view()),
+    path('api/videos/opensub_link', video_views.FindOpensubLink.as_view()),
+
     
     # comments
     path('api/videos/comments/<int:pk>', video_views.CommentsByVideo.as_view()),
