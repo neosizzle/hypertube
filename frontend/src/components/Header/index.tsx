@@ -145,9 +145,10 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
       method: 'POST',
       credentials: 'include'
     }).then((data) => {
-      if (data.ok) router.push('/login');
+      router.push('/login');
     }).catch((error) => {
       console.error(error)
+      router.push('/login');
     })
   }
 

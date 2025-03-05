@@ -11,6 +11,7 @@ import re
 import urllib.parse
 from datetime import datetime
 from groq import Groq
+from django.utils import timezone
 
 from logging import error
 
@@ -81,6 +82,7 @@ class VideoWatchedDetail(APIView):
 			video = Video.objects.get(pk=pk)
 			user = request.app_user
 			video.watched_by.add(user)
+			video.last_watched_time = timezone.now()
 			serializer = VideoSerializer(video)
 			return Response(serializer.data)
 		except Video.DoesNotExist:

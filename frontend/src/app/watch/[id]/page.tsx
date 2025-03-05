@@ -12,7 +12,6 @@ import { User } from "../../../types/User"
 import { useLocale, useTranslations } from "next-intl"
 import { locales } from "@/i18n/config"
 import { Video } from "../../../types/Video"
-import { sub } from "motion/react-client"
 import Spinner from "../../../components/Spinner"
 
 const enter = {
@@ -296,7 +295,7 @@ export default function Watch() {
   const [downloadingSub, setDownloadingSub] = useState(false)
   const [resolvingMagnet, setResolvingMagnet] = useState(false)
   const [initHandshakeData, setInitHandshakeData] = useState<string | null>(null);
-
+  const { push } = useRouter()
 
   const [subAvailableMap, setSubAvailableMap] = useState(new Map<string, boolean>());
   
@@ -341,12 +340,13 @@ export default function Watch() {
     });
 
     peer.on('close', () => {
-      alert('remote peer close')
+      // alert('remote peer close')
     })
 
     peer.on('error', (e) => {
-      alert('remote peer error')
       console.log(e.message)
+      alert('remote peer error')
+      push("/browse")
     })
 
     connectionRef.current = peer;
