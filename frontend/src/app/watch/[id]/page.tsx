@@ -291,7 +291,7 @@ export default function Watch() {
   const [subLang, setSubLang] = useState<string | null>(null)
   const [subPath, setSubPath] = useState<string | null>(null)
   const [magnet, setMagnet] = useState<string | null>(null)
-  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/')
+  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/') // disconnects on unmounts automatically
   const [downloadingSub, setDownloadingSub] = useState(false)
   const [resolvingMagnet, setResolvingMagnet] = useState(false)
   const [initHandshakeData, setInitHandshakeData] = useState<string | null>(null);
@@ -351,6 +351,11 @@ export default function Watch() {
 
     connectionRef.current = peer;
     
+    return () => {
+      peer.destroy()
+      connectionRef.current = null;
+    }
+
   }, [readyState])
 
   // handle get user
@@ -424,7 +429,10 @@ export default function Watch() {
       setMagnet(magnet)
       setResolvingMagnet(false)
     })
-    .catch(err => console.error(err))
+    .catch(err => {
+      push("/browse")
+      console.error(err)
+    })
 
   }, [video, videoName, imdbid])
   
@@ -540,6 +548,7 @@ export default function Watch() {
       <div className="flex flex-col justify-center lg:py-10 lg:px-16 mb-auto space-y-4 lg:space-y-8">
         <div className="flex flex-col lg:flex-row space-x-8 h-full justify-center">
           <video
+          // autoPlay // This would cause connection failed by rtc peer if anabled somehow...
           controls={true}
           ref={videoRef}
           className="w-[100%] aspect-video bg-black text-black lg:rounded-xl"

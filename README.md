@@ -180,3 +180,6 @@ To set up the backend, follow these steps:
 ## Feature suggestions
 1. Multifile torrents for tv series with multiple episodes
 2. Custom title matching engine for torrent file query
+3. Optimizations for larger mkv to support multiple streams
+4. More options to apply filters on the fly
+5. More robust torrent state handling
