@@ -9,10 +9,9 @@ import { motion } from "motion/react"
 import Image from "next/image"
 import Peer from 'simple-peer';
 import { User } from "../../../types/User"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { locales } from "@/i18n/config"
 import { Video } from "../../../types/Video"
-import { sub } from "motion/react-client"
 import Spinner from "../../../components/Spinner"
 
 const enter = {
@@ -231,40 +230,48 @@ function VideoInfo({ tmbd_id, onObtainImdbId, onObtainName }: { tmbd_id: string,
 function StatusDisplay({ video, subPath, resolvingMagnet, torrent_file_name, stream }: { video: Video | null, subPath : string | null, resolvingMagnet : boolean, torrent_file_name: string | null, stream: MediaStream | null}) {
   
   return (
-    <div>
-      <div className="flex">
-        Video ... {video ? 'OK' : <Spinner/>}
+    <div className="text-black space-y-2">
+      <div className="text-black font-medium text-md lg:text-2xl">Torrent Status</div>
+      <div className="flex flex-row justify-between">
+        <div>Video:</div>
+        <div>{video ? '✅' : <Spinner/>}</div>
       </div>
   
-      <div className="flex">
-        subPath ... {subPath ? 'OK' : 'waiting..'}
+      <div className="flex flex-row justify-between">
+        <div>Subtitles:</div>
+        <div>{subPath ? '✅' : <Spinner/>}</div>
       </div>
       
-      <div className="flex">
-        resolvingMagnet ... {!resolvingMagnet || torrent_file_name ? 'OK' : 'waiting..'}
+      <div className="flex flex-row justify-between">
+        <div>Torrent:</div>
+        <div>{!resolvingMagnet || torrent_file_name ? '✅' : <Spinner/>}</div>
       </div>
       
-      <div className="flex">
-        stream ... {stream ? 'OK' :  <Spinner/>}
+      <div className="flex flex-row justify-between">
+        <div>Stream:</div>
+        <div>{stream ? '✅' :  <Spinner/>}</div>
       </div>
     </div>
   )
 }
 
-function SubtitleLocaleSelector({ curr_lang, className, onChange }: { curr_lang: string, className?: string, onChange: (value: string) => void }) {
+function SubtitleLocaleSelector({ curr_lang, curr_lang_available, className, onChange }: { curr_lang: string, curr_lang_available: boolean, className?: string, onChange: (value: string) => void }) {
 
   const l = useTranslations('Locales')
 
   return (
-   <div>
-     Subtitles: &nbsp;
-     <select className={className}
-      value={curr_lang}
-      onChange={(e) =>  onChange(e.target.value)}>
-        {
-          locales.map((locale, i) =>  (<option key={i} value={locale}>{l(locale)}</option>))
-        }
-      </select>
+   <div className="text-black font-medium text-md lg:text-2xl space-y-2">
+     <div>Subtitles</div>
+     <div className="flex flex-row justify-between space-x-5 font-medium text-md lg:text-2xl">
+      <select className={className}
+        value={curr_lang}
+        onChange={(e) =>  onChange(e.target.value)}>
+          {
+            locales.map((locale, i) =>  (<option key={i} value={locale}>{l(locale)}</option>))
+          }
+        </select>
+        <div className="flex items-center justify-center">{curr_lang_available ? '✅' : '❌'}</div>
+     </div>
    </div>
   )
 }
@@ -284,10 +291,24 @@ export default function Watch() {
   const [subLang, setSubLang] = useState<string | null>(null)
   const [subPath, setSubPath] = useState<string | null>(null)
   const [magnet, setMagnet] = useState<string | null>(null)
-  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/')
+  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:8000/ws/signalling/') // disconnects on unmounts automatically
   const [downloadingSub, setDownloadingSub] = useState(false)
   const [resolvingMagnet, setResolvingMagnet] = useState(false)
   const [initHandshakeData, setInitHandshakeData] = useState<string | null>(null);
+  const { push } = useRouter()
+
+  const [subAvailableMap, setSubAvailableMap] = useState(new Map<string, boolean>());
+  
+  const updateMap = (k: string, v: boolean) => {
+    setSubAvailableMap(new Map(subAvailableMap.set(k,v)));
+  }
+
+  // mark all subs as available initially
+  useEffect(() => {
+    locales.map((l) => {
+      updateMap(l, true)
+    })
+  }, [])
 
   // init RTC peer when ws is connected
   useEffect(() => {
@@ -319,16 +340,22 @@ export default function Watch() {
     });
 
     peer.on('close', () => {
-      alert('remote peer close')
+      // alert('remote peer close')
     })
 
     peer.on('error', (e) => {
+      console.log(e.message)
       alert('remote peer error')
-      console.log(e.code)
+      push("/browse")
     })
 
     connectionRef.current = peer;
     
+    return () => {
+      peer.destroy()
+      connectionRef.current = null;
+    }
+
   }, [readyState])
 
   // handle get user
@@ -355,13 +382,14 @@ export default function Watch() {
     
     if ((subLang == "en" && video.en_sub_file_name == "") || (subLang == "ms" && video.bm_sub_file_name == "")){
       setDownloadingSub(true)
-      fetch(`http://localhost:3000/subscene_dl?imdbid=${imdbid}&lang=${subLang}`)
+      fetch(`http://localhost:8000/api/videos/opensub_link?imdb_id=${imdbid}&lang=${subLang}`, { credentials:'include' })
       .then(data => {
         if (data.status != 200)
         {
           alert(`subtitle not found for ${subLang}`)
           setDownloadingSub(false)
-          Promise.reject(`subtitle not found for ${subLang}`);
+          updateMap(subLang, false)
+          return Promise.reject(`subtitle not found for ${subLang}`);
         }
         return data.json()
       })
@@ -401,7 +429,10 @@ export default function Watch() {
       setMagnet(magnet)
       setResolvingMagnet(false)
     })
-    .catch(err => console.error(err))
+    .catch(err => {
+      push("/browse")
+      console.error(err)
+    })
 
   }, [video, videoName, imdbid])
   
@@ -489,7 +520,7 @@ export default function Watch() {
     }
     if (type == "custom_sub") {
       // NOTE: video should not be null already here.
-      const sub_path = `http://localhost:8000/media/subtitles/${video?.tmdb_id}${subLang}.vtt`
+      const sub_path = `http://localhost:8000/media/subtitles/${video?.tmdb_id}${subLang}.webvtt`
       setSubPath(sub_path)
       setDownloadingSub(false)
 
@@ -515,12 +546,12 @@ export default function Watch() {
     <div className="h-auto w-full bg-white flex flex-col justify-between">
       <Header />
       <div className="flex flex-col justify-center lg:py-10 lg:px-16 mb-auto space-y-4 lg:space-y-8">
-        <div className="flex flex-col lg:flex-row space-x-8 h-full">
-          {/* <iframe className="w-full lg:w-[90%] aspect-video bg-black text-black lg:rounded-xl"/> */}
+        <div className="flex flex-col lg:flex-row space-x-8 h-full justify-center">
           <video
+          // autoPlay // This would cause connection failed by rtc peer if anabled somehow...
           controls={true}
           ref={videoRef}
-          className="w-full lg:w-[90%] aspect-video bg-black text-black lg:rounded-xl"
+          className="w-[100%] aspect-video bg-black text-black lg:rounded-xl"
           crossOrigin='anonymous'
           >
           {
@@ -533,8 +564,7 @@ export default function Watch() {
               default={true}
 
             /> : <></>
-          }        
-
+          }
           {
             subLang == 'ms' && subPath?
             <track
@@ -544,8 +574,7 @@ export default function Watch() {
               src={subPath}
               default={true}
             /> : <></>
-          }        
-
+          }
           </video>
         </div>
         <div className="flex flex-col md:flex-row justify-between">
@@ -555,18 +584,18 @@ export default function Watch() {
             <div className="animate-pulse h-10 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
             :
             <div className="flex flex-col px-4 lg:space-y-4">
+              <SubtitleLocaleSelector
+              className={`${downloadingSub? 'disabled' : ''} disabled w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+                border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none`}
+              curr_lang={subLang}
+              curr_lang_available={subAvailableMap.get(subLang) ?? false}
+              onChange={(new_lang) => setSubLang(new_lang)}/>
               <StatusDisplay
               video={video}
               subPath={subPath}
               resolvingMagnet={resolvingMagnet}
               torrent_file_name={video?.torrent_file_name || null}
               stream={stream}/>
-              
-              <SubtitleLocaleSelector
-              className={`${downloadingSub? 'disabled' : ''} disabled w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
-            border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none`}
-              curr_lang={subLang}
-              onChange={(new_lang) => setSubLang(new_lang)}/>
             </div>
           }
         </div>

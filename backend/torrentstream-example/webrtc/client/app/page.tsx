@@ -50,7 +50,7 @@ export default function Home() {
       console.log(data)
       const data_str = JSON.stringify(data)
       if (!connectedStateRef.current)
-        sendMessage(`pass|handshake|${data_str}|VASNA|src.mov|subscne|mkv|imdb_id|2`)
+        sendMessage(`pass|handshake|${data_str}|VNASNA|src.mov|subscne|mkv|imdb_id|2`)
 
       // for ack video, 'data will contain ack message
       else
@@ -218,14 +218,14 @@ const MediaStreamPlayer: React.FC<MediaStreamPlayerProps> = ({ stream }) => {
       label="English"
       kind="subtitles"
       srcLang='en'
-      src="http://localhost:8000/media/subtitles/69420EN.vtt"
+      src="http://localhost:8000/media/subtitles/69420EN.webvtt"
       />
 
       <track
       label="Malay"
       kind="subtitles"
       srcLang='az'
-      src="http://localhost:8000/media/subtitles/69420EN.vtt"
+      src="http://localhost:8000/media/subtitles/69420EN.webvtt"
       />
 
       </video>

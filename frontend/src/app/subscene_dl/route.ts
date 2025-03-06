@@ -7,6 +7,7 @@ const LANG_MAP: {[key: string] : string[]} = {
 }
 
 // This indirection is required due to CORS and subscene does not have REST API
+// TODO: add cookies here
 export async function GET(request: Request) {
 	const url = new URL(request.url);
 	const imdbid = url.searchParams.get('imdbid');
@@ -15,10 +16,10 @@ export async function GET(request: Request) {
 
 	if (!imdbid)
 		return NextResponse.json({ detail: "imdbid is required" }, {status: 400});
-
+	
 	if (!accepted_langs)
 		return NextResponse.json({ detail: `invalid lang "${lang}"` }, {status: 400});
-
+	
 	try {
 		let data_raw = await fetch(`https://sub-scene.com/search?query=${imdbid}`)
 		let data_text = await data_raw.text()	

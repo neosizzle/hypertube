@@ -183,3 +183,6 @@ To set up the backend, follow these steps:
 1. Multifile torrents for tv series with multiple episodes
 2. Custom title matching engine for torrent file query
 3. Direct peer to peer with webrtc just like how webtorrent does it, bypassing the signalling requirement(?)
+4. Optimizations for larger mkv to support multiple streams
+5. More options to apply filters on the fly
+6. More robust torrent state handling
