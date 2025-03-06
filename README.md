@@ -58,6 +58,8 @@ Below is the video streaming flow we have implemented with a simple websocket se
 ## Mkv conversion
 The mp4 files are converted to mkv on the fly using [ffmpeg-python](https://github.com/kkroening/ffmpeg-python), a ffmpeg wrapper for python. 
 
+> NOTE: This is not required anymore as MediaStream API is compatible for all video files within our obsevation
+
 ## External search APIs
 To facilitate the discovery feature, we offloaded the search function to two external APIs, [OMDB](https://www.omdbapi.com) and [TMDB](https://developer.themoviedb.org/reference/intro/getting-started). Both of these offer search and filter functions, however we use OMDB as our source of truth and the TMDB acts as a backup complementing the contents which OMDB is lacking. OMDB results will always be the priority in the case of a conflict.
 
@@ -180,3 +182,4 @@ To set up the backend, follow these steps:
 ## Feature suggestions
 1. Multifile torrents for tv series with multiple episodes
 2. Custom title matching engine for torrent file query
+3. Direct peer to peer with webrtc just like how webtorrent does it, bypassing the signalling requirement(?)
