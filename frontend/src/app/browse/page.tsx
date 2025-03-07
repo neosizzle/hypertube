@@ -7,7 +7,6 @@ import { FullInfo, ShortInfo } from "../../types/ShowInfo";
 import ShowInfoModal from "@/components/ShowInfoModal";
 import ShowGrid from "@/components/ShowGrid";
 import { useTranslations } from "next-intl";
-import { User } from "../../types/User";
 
 export default function Browse() {
 

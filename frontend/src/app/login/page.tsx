@@ -7,7 +7,6 @@ import { useTranslations } from 'next-intl'
 import { redirect, useRouter } from "next/navigation"
 import LocaleSelector from "@/components/LocaleSelector"
 import React, { useEffect, useRef, useState } from "react"
-import { setUserLocale } from "@/services/locale"
 
 const enter = {
   opacity: 1,

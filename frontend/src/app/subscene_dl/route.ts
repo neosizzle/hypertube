@@ -1,5 +1,8 @@
+// @ts-expect-error : library does not have ES6 imports
+import JSDOM from 'jsdom';
+
 import { NextResponse } from "next/server";
-const { JSDOM } = require("jsdom");
+// const { JSDOM } = require("jsdom");
 
 const LANG_MAP: {[key: string] : string[]} = {
 	"en" : ["English"],
@@ -37,7 +40,7 @@ export async function GET(request: Request) {
 
 		let found_download = ''
 		const subtitles_list =  dom.window.document.querySelector("tbody")
-		for (var i = 0; i < subtitles_list.children.length; i++) {
+		for (let i = 0; i < subtitles_list.children.length; i++) {
 			const subtitle_row = subtitles_list.children[i];
 			const curr_lang = subtitle_row.querySelector("span").textContent.trim()
 			if (!accepted_langs.includes(curr_lang))

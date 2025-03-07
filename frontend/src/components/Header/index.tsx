@@ -144,7 +144,7 @@ function Profile({ isLoggedIn, profilePicURL } : { isLoggedIn : boolean, profile
     fetch('http://localhost:8000/api/auth/logout', {
       method: 'POST',
       credentials: 'include'
-    }).then((data) => {
+    }).then(() => {
       router.push('/login');
     }).catch((error) => {
       console.error(error)
