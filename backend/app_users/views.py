@@ -325,6 +325,21 @@ class AppUserOthersDetail(APIView):
 			error(e)
 			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class AppUserPublicList(APIView):
+
+	def get(self, request, format=None):
+
+		username = request.query_params.get('username', "")
+
+		app_users = AppUser.objects.filter(username__startswith=username).order_by('username')
+		serializer = AppUserSerializer(app_users, many=True)
+
+		filtered = [{k: v for k, v in item.items()
+			if k not in ['email', 'ft_iden', 'discord_iden', 'github_iden']} 
+			for item in serializer.data]
+
+		return Response(filtered)
+
 class AppUserOthersPublicDetail(APIView):
 	def get(self, request, pk, format=None):
 		try:

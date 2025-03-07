@@ -13,6 +13,4 @@ export type User = {
 	username: string
 	watched_videos: [Video]
 	prefered_stream_dimensions: number
-  }
-  
-  
+}
