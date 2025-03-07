@@ -1,5 +1,7 @@
 'use client'
 
+// @ts-expect-error : library does not have ES6 imports
+import Peer from 'simple-peer';
 import Footer from "@/components/Footer"
 import Header from "@/components/Header"
 import { useParams, useRouter } from "next/navigation"
@@ -7,9 +9,8 @@ import { useEffect, useRef, useState } from "react"
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { motion } from "motion/react"
 import Image from "next/image"
-import Peer from 'simple-peer';
 import { User } from "../../../types/User"
-import { useLocale, useTranslations } from "next-intl"
+import { useTranslations } from "next-intl"
 import { locales } from "@/i18n/config"
 import { Video } from "../../../types/Video"
 import Spinner from "../../../components/Spinner"
@@ -277,12 +278,11 @@ function SubtitleLocaleSelector({ curr_lang, curr_lang_available, className, onC
 }
 
 export default function Watch() {
-  const connectionRef = useRef<any>(null);
+  const connectionRef = useRef(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const connectedStateRef = useRef(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const { id } : { id : string } = useParams()
-  const [ showId ] = useState(id)
   const [user, setUser] = useState<User | null>(null);
   const [tmdbid, setTmdbid] = useState('');
   const [imdbid, setImdbid] = useState('');
@@ -303,10 +303,10 @@ export default function Watch() {
     setSubAvailableMap(new Map(subAvailableMap.set(k,v)));
   }
 
-  // mark all subs as available initially
+  // mark all subs as unavailable initially
   useEffect(() => {
     locales.map((l) => {
-      updateMap(l, true)
+      updateMap(l, false)
     })
   }, [])
 
@@ -318,7 +318,7 @@ export default function Watch() {
     // create rtc peer
     const peer = new Peer({ initiator: true, trickle: false });
 
-    peer.on('signal', (data : any) => {
+    peer.on('signal', (data: object) => {
       // we are the initiator here, this would get called after creation OR ack video
       // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
       // TODO: make these values correct
@@ -335,7 +335,7 @@ export default function Watch() {
       // alert('remote peer connect')
     })
 
-    peer.on('stream', (currentStream) => {
+    peer.on('stream', (currentStream: MediaStream) => {
       setStream(currentStream)
     });
 
@@ -343,7 +343,7 @@ export default function Watch() {
       // alert('remote peer close')
     })
 
-    peer.on('error', (e) => {
+    peer.on('error', (e: { message: string }) => {
       console.log(e.message)
       alert('remote peer error')
       push("/browse")
@@ -399,6 +399,7 @@ export default function Watch() {
       .catch(err => console.log(err))
     }
     else {
+      updateMap(subLang, true)
       if (subLang == "en") setSubPath(video.en_sub_file_name)
       else setSubPath(video.bm_sub_file_name)
     }
@@ -496,11 +497,15 @@ export default function Watch() {
     if (type == "handshake") {
       // we should have an answer here. 
       // use the connectionref to ack that answer using peer.signal()
+      
+      // @ts-expect-error : connectionRef will have contents at this point in time
       connectionRef.current.signal(message) // at this point, the peers are connected
     }
     if (type == "video") {
       // this is sent my server to negotiate video codec stuff
       // https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
+      
+      // @ts-expect-error : connectionRef will have contents at this point in time
       connectionRef.current.signal(message) // we are acking video here 
     }
     if (type == "info") {
@@ -520,7 +525,9 @@ export default function Watch() {
     }
     if (type == "custom_sub") {
       // NOTE: video should not be null already here.
+      const subLang = message
       const sub_path = `http://localhost:8000/media/subtitles/${video?.tmdb_id}${subLang}.webvtt`
+      updateMap(subLang, true)
       setSubPath(sub_path)
       setDownloadingSub(false)
 

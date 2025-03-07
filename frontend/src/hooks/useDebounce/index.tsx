@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-export function useDebounce(cb: any, delay: number) {
+// @ts-expect-error : cb is any here, we ball
+export function useDebounce(cb, delay: number) {
   const [debounceValue, setDebounceValue] = useState(cb);
   useEffect(() => {
     const handler = setTimeout(() => {

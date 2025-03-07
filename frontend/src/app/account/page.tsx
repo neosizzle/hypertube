@@ -6,11 +6,10 @@ import Modal from '@/components/modal';
 import { motion } from "motion/react";
 import Image from "next/image"
 import { useRouter } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import LocaleSelector from "@/components/LocaleSelector";
 import DimensionSelector from "../../components/DimensionSelector";
-import { SearchContext } from "@/providers/SearchProvider";
 
 const enter = {
   opacity: 1,
