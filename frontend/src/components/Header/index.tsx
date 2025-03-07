@@ -224,7 +224,6 @@ export default function Header() {
   // close search bar before redirect
   useEffect(() => {
     if (searchQuery === '' && isOpen === false && redirect !== '') {
-      console.log(redirect)
       router.push(redirect)
     }
   }, [searchQuery, isOpen, router, redirect])

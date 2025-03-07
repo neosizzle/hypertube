@@ -303,10 +303,10 @@ export default function Watch() {
     setSubAvailableMap(new Map(subAvailableMap.set(k,v)));
   }
 
-  // mark all subs as available initially
+  // mark all subs as unavailable initially
   useEffect(() => {
     locales.map((l) => {
-      updateMap(l, true)
+      updateMap(l, false)
     })
   }, [])
 
@@ -520,6 +520,7 @@ export default function Watch() {
     }
     if (type == "custom_sub") {
       // NOTE: video should not be null already here.
+      const subLang = message
       const sub_path = `http://localhost:8000/media/subtitles/${video?.tmdb_id}${subLang}.webvtt`
       setSubPath(sub_path)
       setDownloadingSub(false)
@@ -534,6 +535,7 @@ export default function Watch() {
       })
       .then((data) => data.json())
       .then((body) => {
+        updateMap(subLang, true)
         setVideo(body)
         if (subLang == "en") setSubPath(body.en_sub_file_name)
         else setSubPath(body.bm_sub_file_name)
