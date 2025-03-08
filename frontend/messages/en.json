@@ -70,6 +70,7 @@
 
 	"Header": {
 		"home": "Home",
+		"users": "Users",
 		"logOut": "Log Out",
 		"account": "Account",
 		"search": "Search",

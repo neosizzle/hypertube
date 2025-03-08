@@ -43,6 +43,7 @@ urlpatterns = [
 	path('api/users/picture', app_users_views.AppUserPicture.as_view()),
 	path('api/users/me', app_users_views.AppUserDetail.as_view()),
 	path('api/users/<int:pk>', app_users_views.AppUserOthersDetail.as_view()),
+	path('api/users/public', app_users_views.AppUserPublicList.as_view()),
 	path('api/users/public/<int:pk>', app_users_views.AppUserOthersPublicDetail.as_view()),
 	path('api/auth/login', app_users_views.AuthLogin.as_view()),
 	path('api/auth/logout', app_users_views.AuthLogout.as_view()),
@@ -57,7 +58,6 @@ urlpatterns = [
 	path('api/videos/fromTMDB', video_views.FromTMDB.as_view()),
 	path('api/videos/opensub_link', video_views.FindOpensubLink.as_view()),
 
-	
 	# comments
 	path('api/videos/comments/<int:pk>', video_views.CommentsByVideo.as_view()),
 	path('api/comments/all', video_views.AllComments.as_view()),

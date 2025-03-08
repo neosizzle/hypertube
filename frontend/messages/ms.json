@@ -70,6 +70,7 @@
 
 	"Header": {
 		"home": "Utama",
+		"users": "Pengguna",
 		"logOut": "Daftar Keluar",
 		"account": "Akaun",
 		"search": "Cari rancangan",
