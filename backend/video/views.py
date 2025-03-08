@@ -1,5 +1,7 @@
+from django.conf import settings
 import json
 import os
+import shutil
 import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -42,6 +44,10 @@ class VideoList(APIView):
 		})
 
 	def post(self, request, format=None):
+		admin_key = request.query_params.get('admin_key', "")
+		real_admin_key = os.getenv('ADMIN_KEY')
+		if admin_key != real_admin_key:
+			return Response({"detail": "admin key incorrect"}, status=status.HTTP_400_BAD_REQUEST)
 		serializer = VideoSerializer(data=request.data)
 		if serializer.is_valid():
 			serializer.save()
@@ -49,6 +55,28 @@ class VideoList(APIView):
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class VideoDetail(APIView):
+	
+	def delete_files(self, file_paths):
+		for file_path in file_paths:
+			if os.path.exists(file_path):
+				if not os.path.isdir(file_path):
+					os.remove(file_path)
+					print(f"The file {file_path} has been deleted.")
+				else:
+					print(f"The file {file_path} is a directory.")
+			else:
+				print(f"The file {file_path} does not exist.")
+
+	def delete_folder(self, folder_path):
+		try:
+			if os.path.isdir(folder_path):
+				shutil.rmtree(folder_path)
+				print(f"Folder '{folder_path}' and all its contents removed successfully.")
+			else:
+				print(f"The path {folder_path} is not a valid directory.")
+		except Exception as e:
+			print(f"Error: {e}")
+
 	def patch(self, request, pk):
 		video = None
 		try:
@@ -75,6 +103,36 @@ class VideoDetail(APIView):
 		except Exception as e:
 			error(e)
 			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+	
+	def delete(self, request, pk):
+		admin_key = request.query_params.get('admin_key', "")
+		real_admin_key = os.getenv('ADMIN_KEY')
+		if admin_key != real_admin_key:
+			return Response({"detail": "admin key incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+		video = None
+		try:
+			video = Video.objects.get(pk=pk)
+		except Video.DoesNotExist:
+			return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+		except Exception as e:
+			error(e)
+			return Response({"detail": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+		# search torrent file and delete from file system
+		torrent_folder = os.path.join(settings.MEDIA_ROOT, f'torrents/{video.tmdb_id}')
+		
+
+		# search subtitle file and delete from file system
+		# NOTE: hardcoding media root here
+		prefix = "http://localhost:8000/media/subtitles/"
+		en_sub_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{video.en_sub_file_name.replace(prefix, "")}')
+		bm_sub_path = os.path.join(settings.MEDIA_ROOT, f'subtitles/{video.bm_sub_file_name.replace(prefix, "")}')
+
+		self.delete_files([en_sub_path, bm_sub_path])
+		self.delete_folder(torrent_folder)
+
+		video.delete()
+		return Response(status=status.HTTP_200_OK)
 
 class VideoWatchedDetail(APIView):
 	def post(self, request, pk, format=None):

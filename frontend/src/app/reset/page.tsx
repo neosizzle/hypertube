@@ -113,7 +113,7 @@ function ResetPasswordCard() {
       <div className="text-black text-2xl lg:text-4xl font-semibold">{c('resetPassword')}</div>
       <div className="text-black text-sm lg:text-base font-normal">{t('instructions')}</div>
       <input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={c('email')} ref={emailInput}/>
-      <input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('newPassword')} ref={pwInput}/>
+      <input className="h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('newPassword')} ref={pwInput} type="password"/>
       <div className="flex flex-row justify-between space-x-2">
         <input className="h-8 lg:h-12 w-full xl:w-2/3 bg-white rounded-lg p-2 text-black text-xs lg:text-base" placeholder={t('code')} ref={codeInput}/>
           <button className="h-8 lg:h-12 w-32 bg-purple-400 rounded-lg p-2 font-semibold font-white text-[0.6rem] md:text-xs lg:text-sm xl:text-base

@@ -1,4 +1,5 @@
 import os
+import shutil
 from django.utils import timezone
 from django.conf import settings
 
@@ -21,8 +22,6 @@ def delete_files(file_paths):
 		else:
 			print(f"The file {file_path} does not exist.")
 
-import shutil
-import os
 def delete_folder(folder_path):
     try:
         if os.path.isdir(folder_path):

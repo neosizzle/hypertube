@@ -293,6 +293,8 @@ class SignalConsumer(AsyncConsumer):
             return
 
     async def websocket_disconnect(self, event):
+        if self.rtc_client[0] != None:
+            await self.rtc_client[0].close()
         raise StopConsumer
 
     # TODO error handling 
@@ -371,6 +373,9 @@ class SignalConsumer(AsyncConsumer):
 
             # create new rtc client
             pc = RTCPeerConnection()
+
+            # add client to member refrence
+            self.rtc_client[0] = pc
             
             # use object_from_string(message_str) To generate session descriptions.
             session_desc = object_from_string(handshake_data)
@@ -527,8 +532,8 @@ class SignalConsumer(AsyncConsumer):
                 "text": f"{token}|video|{nego_to_send}",
             }) # NOTE: use datachannel here?
 
-            # add client to member refrence
-            self.rtc_client[0] = pc
+            # # add client to member refrence
+            # self.rtc_client[0] = pc
         elif msg_type == "video":
             handshake_data = data_sections[2]
             # handle message where client ack our video negotiation

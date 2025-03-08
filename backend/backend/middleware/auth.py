@@ -12,7 +12,9 @@ class AuthMiddleware:
 		("POST", r"^/api/auth/otp$"),
 		("POST", r"^/api/auth/reset$"),
 		("GET", r"^/api/videos$"),
+		("POST", r"^/api/videos$"), # protected by admin key auth
 		("GET", r"^/api/videos/\d+$"),
+		("DELETE", r"^/api/videos/\d+$"), # protected by admin key auth
 		("GET", r"^/api/videos/comments/\d+$"),
 		("GET", r"^/api/comments$"),
 		("GET", r"^/api/comments/all$"),

@@ -112,7 +112,6 @@ class PwResetAttempt(models.Model):
 				existing_attempt.delete()
 
 		token = str(random.randint(100000, 999999))
-		
 		created_time = timezone.now()
 		request = cls.objects.create(app_user=app_user, token=token, created_time=created_time)		
 		request.save()
@@ -127,6 +126,7 @@ class PwResetAttempt(models.Model):
 			if timezone.now() - existing_attempt.created_time < timedelta(minutes=10):
 				# validate if otp is equals
 				if otp != existing_attempt.token:
+					print(f"token {otp} != {existing_attempt.token}")
 					return None
 				
 				# get user from otp, delete attempt and return
@@ -136,7 +136,9 @@ class PwResetAttempt(models.Model):
 			else:
 				# If the attempt has expired, delete that attempt and return none
 				existing_attempt.delete()
+				print(f"time now {timezone.now()} - {existing_attempt.created_time} = {timezone.now() - existing_attempt.created_time}")
 				return None
 		else:
+			print(f"no existing attempts for {otp}")
 			return None
 

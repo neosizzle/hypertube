@@ -408,7 +408,7 @@ class OTPRequest(APIView):
 			content = "\n".join([
 				"You have requested an OTP to reset the password of the hypertube account associated with this email.",
 				f"<h1>OTP: {token}</h1>",
-				"The OTP will expire in 30 seconds."
+				"The OTP will expire in 10 minutes."
 			])
 			try:
 				yag.send(to=email, subject=subject, contents=content)
