@@ -48,9 +48,10 @@ export default function Home() {
       // we are the initiator here, this would get called after creation OR ack video
       // for init, 'data' will contain an offer msg that needs to be sent to signalling server and hopefully receive the same signalling text
       console.log(data)
+      const magnet = "magnet:?Xt=urn:btih:79816060ea56d56f2a2148cd45705511079f9bca&dn=TPB.AFK.2013.720p.h264-SimonKlose&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Fexodus.desync.com%3A6969"
       const data_str = JSON.stringify(data)
       if (!connectedStateRef.current)
-        sendMessage(`pass|handshake|${data_str}|VNASNA|src.mov|subscne|mkv|imdb_id|2`)
+        sendMessage(`pass|handshake|${data_str}|VNASNA|${magnet}|subscne|mkv|imdb_id|2`)
 
       // for ack video, 'data will contain ack message
       else
