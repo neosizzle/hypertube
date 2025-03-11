@@ -1,6 +1,7 @@
 'use client'
 
-// @ts-expect-error : library does not have ES6 imports
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import Peer from 'simple-peer';
 import Footer from "@/components/Footer"
 import Header from "@/components/Header"
@@ -498,14 +499,12 @@ export default function Watch() {
       // we should have an answer here. 
       // use the connectionref to ack that answer using peer.signal()
       
-      // @ts-expect-error : connectionRef will have contents at this point in time
       connectionRef.current.signal(message) // at this point, the peers are connected
     }
     if (type == "video") {
       // this is sent my server to negotiate video codec stuff
       // https://stackoverflow.com/questions/78182143/webrtc-aiortc-addtrack-failing-inside-datachannel-message-receive-handler
       
-      // @ts-expect-error : connectionRef will have contents at this point in time
       connectionRef.current.signal(message) // we are acking video here 
     }
     if (type == "info") {

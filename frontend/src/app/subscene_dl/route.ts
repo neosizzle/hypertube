@@ -1,4 +1,3 @@
-// @ts-expect-error : library does not have ES6 imports
 import JSDOM from 'jsdom';
 
 import { NextResponse } from "next/server";

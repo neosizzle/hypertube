@@ -2,12 +2,16 @@
 Personal movie / anime streaming site where the content are obtained via bittorrent protocol built with nextjs and django.
 
 ## Design, Demo and screenshots
+![image](https://hackmd.io/_uploads/HyZ3a0cokl.png)
 > User is able to create an account with their email or a third party app
 
+![Screenshot 2025-03-09 172108](https://hackmd.io/_uploads/BykPCA5oJx.png)
 > Discover screen inspired by netflix
 
+![image](https://hackmd.io/_uploads/Skq0A0csyl.png)
 > Video streaming in action
 
+![image](https://hackmd.io/_uploads/B1KJJyosyl.png)
 > Comment section for videos
 
 ## BitTorrent protocol
@@ -60,12 +64,16 @@ The mp4 files are converted to mkv on the fly using [ffmpeg-python](https://gith
 
 > NOTE: This is not required anymore as MediaStream API is compatible for all video files within our obsevation
 
+> NOTE: The codecs supported by webRTC can be referred [here](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/WebRTC_codecs), the package we use to initialize streams (aiortcs mediaplayer) conviniently converts the files to the correct codecs for us 
+
 ## External search APIs
 To facilitate the discovery feature, we offloaded the search function to two external APIs, [OMDB](https://www.omdbapi.com) and [TMDB](https://developer.themoviedb.org/reference/intro/getting-started). Both of these offer search and filter functions, however we use OMDB as our source of truth and the TMDB acts as a backup complementing the contents which OMDB is lacking. OMDB results will always be the priority in the case of a conflict.
 
-## Torrent file matching 
+## Torrent file matching
+Once a movie name is obtained, a query has to be made to an external magnet database to obtain the magnet link / metainfo. We are using `yts` search endpoint for this purpose. Once we have a list of magnets and their titles to go through, we used [groq](https://groq.com) LLM to match the most suitable title for us from the list of titles. 
 
 ## i18n
+i18n is used for internationalization of static web text content. It uses the nextjs curated `next-intl` package to manage locales and translations. All text contents and their translations are stored in `frontend/messages/{language}.json`. 
 
 ## Requirements
 
