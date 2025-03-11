@@ -186,11 +186,11 @@ function VideoInfo({ tmbd_id, onObtainImdbId, onObtainName }: { tmbd_id: string,
     .then((resp) => {
       if (resp.ok) {
         resp.json().then((data) => {
-          setTitle(data.original_title)
+          setTitle(data.title)
           setReleaseDate(data.details.release_date)
           setOverview(data.overview)
           onObtainImdbId(data.details.imdb_id)
-          onObtainName(data.original_title)
+          onObtainName(data.title)
         })
       }
     })

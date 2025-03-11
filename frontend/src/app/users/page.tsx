@@ -24,7 +24,7 @@ export default function Users() {
       return
     }
 
-    fetch(`http://localhost:8000/api/users/public?username=${query}`, {
+    fetch(`http://localhost:8000/api/users/public?username=${debounceQuery}`, {
       credentials: "include"
     }).then((data) => {
       if (data.ok) {
@@ -50,9 +50,12 @@ export default function Users() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-y-8 gap-x-auto place-items-center">
           {
-            users.map((u, i) => <UserCard key={i} username={u.username} userID={u.id} profilePicURL={"http://localhost:8000" + u.profile_picture}/>)
+            users.length > 0 && users.map((u, i) => <UserCard key={i} username={u.username} userID={u.id} profilePicURL={"http://localhost:8000" + u.profile_picture}/>)
           }
         </div>
+        {
+          users.length == 0 && <div className="h-auto w-full flex flex-col text-center py-10 px-8 lg:px-16 mb-auto space-y-4 text-black text-4xl">{"No users with username \"" + debounceQuery + "\" exist."}</div>
+        }
       </div>
       <Footer />
     </div>
