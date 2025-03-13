@@ -11,6 +11,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useInView } from "react-intersection-observer";
 import ShowGrid from "@/components/ShowGrid";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 const parseDate = (dateString: string) => {
   const [year, month, day] = dateString.split('-').map(Number);
@@ -43,10 +44,13 @@ export default function Search() {
   const [filterType, setFilterType] = useState('all')
   const [filteredResults, setFilteredResults] = useState(results)
 
+  const router = useRouter();
+
   // translation
   const c = useTranslations('Common')
   const t = useTranslations('SearchPage')
   
+
   // debounce search query
   useEffect(() => setDebounceQuery(searchQuery), [debounce]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -59,7 +63,9 @@ export default function Search() {
       method: 'GET',
     }).then((data) => {
       if (data.ok) data.json().then((json) => setResults(json.results))
-    }).catch((error) => console.error(error))
+      else if (data.status == 400)
+        data.json().then((data) => alert(data))
+    }).catch(() => router.push('/error'))
 
     setHasMoreData(true);
     setNextPage(2);
@@ -78,7 +84,9 @@ export default function Search() {
         setNextPage((currPage) => currPage + 1)
         if (results.length === 0) setHasMoreData(false)
       })
-    }).catch((error) => console.error(error))
+      else if (data.status == 400)
+        data.json().then((data) => alert(JSON.stringify(data)))
+    }).catch(() => router.push('/error'))
   }
 
   // load more results for infinite scrolling
@@ -98,9 +106,11 @@ export default function Search() {
       if (resp.ok) resp.json().then((json) => {
         setShowInfo(json)
       })
-    }).catch((error) => {
-      console.error(error)
+      else if (resp.status == 400)
+        resp.json().then((data) => alert(JSON.stringify(data)))
+    }).catch(() => {
       setOpenModal(false)
+      router.push('/error')
     })
   }
 

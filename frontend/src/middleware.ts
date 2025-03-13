@@ -13,7 +13,7 @@ export const config = {
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
 
-  console.log("Token:", token);
+  // console.log("Token:", token);
 
   const response = (!token) ? NextResponse.redirect(new URL("/login", request.url)) : NextResponse.next()
   response.headers.set("x-middleware-cache", "no-cache");
