@@ -199,12 +199,11 @@ export default function Account() {
 
   const updateProfile = () => {
 
-    const requestBody: { username?: string, email?: string, first_name?: string, last_name?: string, prefered_stream_dimensions?: number } = {};
+    const requestBody: { username?: string, email?: string, first_name?: string, last_name?: string } = {};
     if (username) requestBody.username = username;
     if (email) requestBody.email = email;
     if (firstName) requestBody.first_name = firstName
     if (lastName) requestBody.last_name = lastName;
-    if (preferredDims) requestBody.prefered_stream_dimensions = preferredDims
 
     fetch('http://localhost:8000/api/users/me', {
       method: 'PATCH',
@@ -298,7 +297,7 @@ export default function Account() {
         </div>
         <div className="flex flex-col space-y-4 px-2 lg:px-0">
           <div className="text-black text-xl font-medium">{t('vidResolution')}</div>
-          <DimensionSelector preferredDims={preferredDims} onChange={setPreferredDims} className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
+          <DimensionSelector className="w-72 lg:w-96 h-8 lg:h-12 bg-white rounded-lg p-2 text-black text-xs lg:text-base
           border border-slate-400 items-center px-2 bg-transparent hover:bg-black/10 outline-none" />
         </div>
         <div className="flex flex-col space-y-4 px-2 lg:px-0">
