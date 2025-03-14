@@ -75,6 +75,7 @@ export default function Users() {
             <div className="flex flex-col space-y-3 justify-center">
               <div className="text-black text-4xl font-bold">{'@' + username}</div>
               <div className="text-black text-xl ">{firstName + ' ' + lastName}</div>
+              <div className="text-black text-xl">{watched.length} shows watched</div>
             </div>
           </div>
           <div className="text-black space-y-4">
