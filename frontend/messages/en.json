@@ -71,6 +71,17 @@
 		"all": "All"
 	},
 
+	"UsersPage": {
+		"searchUsers": "Find Users",
+		"userWithName": "User with username",
+		"notFound": "not found."
+	},
+
+	"UserDetailPage": {
+		"showsWatched": "Shows Watched",
+		"recentlyWatched": "Recently Watched"
+	},
+
 	"Header": {
 		"home": "Home",
 		"users": "Users",

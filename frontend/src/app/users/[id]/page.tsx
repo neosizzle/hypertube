@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { FullInfo } from "@/types/ShowInfo"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 function WatchedVideoTile({tmdbID, type}: {tmdbID: string, type: string}) {
   
@@ -44,6 +45,8 @@ export default function Users() {
   const [userNotFound, setUserNotFound] = useState(false)
   const router = useRouter();
 
+  const t = useTranslations('UserDetailPage')
+
   useEffect(() => {
 
     fetch(`http://localhost:8000/api/users/public/${id}`, {
@@ -66,22 +69,22 @@ export default function Users() {
   }, [id])
 
   return (
-    <div className="h-auto w-full bg-white flex flex-col justify-between">
+    <div className="h-screen w-full bg-white flex flex-col justify-between">
       <Header />
       {
         !userNotFound && 
-        <div className="h-auto flex flex-col justify-center py-10 px-8 lg:px-16 mb-auto space-y-8">
+        <div className="h-full flex flex-col justify-center py-10 px-8 lg:px-16 mb-auto space-y-8">
           <div className="flex flex-row space-x-8">
             <Image src={`http://localhost:8000${profilePicURL}`} alt="profile picture" width={150} height={150}
             className="rounded-full w-32 h-32"/>
             <div className="flex flex-col space-y-3 justify-center">
               <div className="text-black text-4xl font-bold">{'@' + username}</div>
               <div className="text-black text-xl ">{firstName + ' ' + lastName}</div>
-              <div className="text-black text-xl">{watched.length} shows watched</div>
+              <div className="text-black text-xl">{watched.length} {' ' + t('showsWatched')}</div>
             </div>
           </div>
           <div className="text-black space-y-4">
-            <div className="text-black font-bold text-2xl">Recently Watched</div>
+            <div className="text-black font-bold text-2xl">{t('recentlyWatched')}</div>
             <div className="flex flex-col w-full h-auto space-y-4">
               {
                 watched.map((w, i) => <WatchedVideoTile key={i} tmdbID={w.tmdb_id} type={w.type}/>)

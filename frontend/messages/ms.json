@@ -71,6 +71,17 @@
 		"all": "Semua"
 	},
 
+	"UsersPage": {
+		"searchUsers": "Cari Pengguna",
+		"userWithName": "Pengguna yang bernama",
+		"notFound": "tidak detemui."
+	},
+
+	"UserDetailPage": {
+		"showsWatched": "Filem Ditonton",
+		"recentlyWatched": "Sejarah Tontonan"
+	},
+
 	"Header": {
 		"home": "Utama",
 		"users": "Pengguna",
