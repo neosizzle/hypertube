@@ -5,7 +5,7 @@ export const PREFFERED_DIMS_MAP = ["420p (858x480)", "720p (1280x720)", "1080p (
 
 export default function DimensionSelector({ className }: { className?: string }) {
   
-  const [selectedDims, setSelectedDims] = useState(0)
+  const [selectedDims, setSelectedDims] = useState(null)
   const router = useRouter();
 
   useEffect(() => {
@@ -35,6 +35,10 @@ export default function DimensionSelector({ className }: { className?: string })
       router.push('/error')
     })
   }, [selectedDims])
+
+  if (selectedDims === null)
+    return (<div>Loading</div>)
+
 
   return (
     <select className={className}
