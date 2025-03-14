@@ -42,6 +42,7 @@ export default function Search() {
   const [fromYear, setFromYear] = useState<Date>(new Date(0))
   const [toYear, setToYear] = useState<Date>(new Date())
   const [filterType, setFilterType] = useState('all')
+  const [sortDir, setSortDir] = useState('asc')
   const [filteredResults, setFilteredResults] = useState(results)
 
   const router = useRouter();
@@ -115,16 +116,21 @@ export default function Search() {
   }
 
   useEffect(() => {
-
+    let finalResults = []
+    
     if (filterOption === 'year') {
-      setFilteredResults(results.filter((data) => parseDate(data.date) >= fromYear && parseDate(data.date) <= toYear))
+      finalResults = results.filter((data) => parseDate(data.date) >= fromYear && parseDate(data.date) <= toYear)
     } else if (filterOption === 'type') {
-      setFilteredResults(filterType === 'all' ? results : results.filter((data) => data.type === filterType))
+      finalResults = filterType === 'all' ? results : results.filter((data) => data.type === filterType)
     } else {
-      setFilteredResults(results)
+      finalResults = results
     }
-  
-  }, [results, fromYear, toYear, filterOption, filterType])
+    
+    if (sortDir == "asc") finalResults = finalResults.sort((a,b) => a.title.localeCompare(b.title))
+    if (sortDir == "dsc") finalResults = finalResults.sort((a,b) => b.title.localeCompare(a.title))
+    setFilteredResults([...finalResults])
+
+  }, [results, fromYear, toYear, filterOption, filterType, sortDir])
 
   return (
     <div className="h-screen w-full overflow-x-hidden bg-white flex flex-col justify-between">
@@ -133,6 +139,13 @@ export default function Search() {
         <div className="flex flex-col md:flex-row justify-between md:pt-12 space-y-4 md:space-y-0">
           <div className="text-black text-md md:text-lg lg:text-4xl font-medium">{t('searchResultsFor') + ": \"" + searchQuery + "\""}</div>
           <div className="flex flex-row text-xs md:text-md lg:text-lg items-center space-x-4">
+          <div className="text-black ">{t('sortOrder') + ": "}</div>
+            <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
+            onChange={(e) => setSortDir(e.target.value)}>
+              <option key={1} value='asc'>{t('asc')}</option>
+              <option key={2} value='dsc'>{t('dsc')}</option>
+            </select>
+
             <div className="text-black ">{t('filterBy') + ": "}</div>
             <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
             onChange={(e) => setFilterOption(e.target.value)}>

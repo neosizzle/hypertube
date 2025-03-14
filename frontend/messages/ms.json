@@ -60,6 +60,9 @@
 	"SearchPage": {
 		"searchResultsFor": "Hasil carian untuk",
 		"filterBy": "Tapis mengikut",
+		"sortOrder": "Susunan",
+		"asc": "Menaik",
+		"dsc": "Menurun",
 		"none": "Tiada",
 		"type": "Jenis Rancangan",
 		"year": "Tahun Siaran",
