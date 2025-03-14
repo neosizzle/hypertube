@@ -6,6 +6,7 @@ import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { FullInfo } from "@/types/ShowInfo"
+import { useRouter } from "next/navigation"
 
 function WatchedVideoTile({tmdbID, type}: {tmdbID: string, type: string}) {
   
@@ -41,6 +42,7 @@ export default function Users() {
   const [profilePicURL, setProfilePicURL] = useState('')
   const [watched, setWatched] = useState([])
   const [userNotFound, setUserNotFound] = useState(false)
+  const router = useRouter();
 
   useEffect(() => {
 
@@ -55,12 +57,12 @@ export default function Users() {
           setLastName(json.last_name)
           setProfilePicURL(json.profile_picture)
           setWatched(json.watched_videos)
-          console.log(watched)
+          // console.log(watched)
         })
       } else {
         setUserNotFound(true)
       }
-    }).catch((error) => console.log(error))
+    }).catch(() => router.push('/error'))
   }, [id])
 
   return (

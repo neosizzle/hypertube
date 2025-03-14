@@ -16,7 +16,7 @@ export default function Redirect() {
     const state = urlParams.get('state') // split based on my backend specs
 
     if (!code || !state)
-      return
+      return router.push('/login')
 
     const provider = state.split('_')[0]
     const redirect_uri = `${window.location.protocol}//${window.location.host}${window.location.pathname}`
@@ -37,15 +37,16 @@ export default function Redirect() {
     .then((data) => {
       if (data.ok) {
         data.json().then((json) => {
-          console.log(JSON.stringify(json))
+          // console.log(JSON.stringify(json))
           localStorage.setItem('userID', json.id)
           setUserLocale(json.lang)
           setSuccess(true)
         })
       }
+      else router.push('/login')
     })
-    .catch((error) => {
-      console.error(error)
+    .catch(() => {
+      router.push('/error')
     })
   }, [])
 

@@ -41,6 +41,7 @@ function CommentInput({ videoID, profilePicURL, isLoggedIn, onSuccess }: { video
   const [commenting, setCommenting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const [success, setSuccess] = useState(false)
+  const router = useRouter();
 
   const handleComment = () => {
 
@@ -55,7 +56,8 @@ function CommentInput({ videoID, profilePicURL, isLoggedIn, onSuccess }: { video
       })
     }).then((resp) => {
       if (resp.ok) setSuccess(true)
-    }).catch((error) => console.error(error))
+      inputRef.current.value = null
+    }).catch(() => router.push('/error'))
   }
 
   useEffect(() => {
@@ -108,10 +110,6 @@ function Comment({ comment }: { comment: Comment }) {
     router.push(`/users/${comment.user.id}`)
   }
 
-  useEffect(() => {
-    console.log(JSON.stringify(comment))
-  }, [comment])
-
   return (
     <div className="flex flex-row space-x-2 lg:space-x-4 px-4">
       <Image src={'http://localhost:8000' + comment.user.profile_picture} alt="user" width={1000} height={1000}
@@ -131,6 +129,7 @@ function CommentSection({ videoID }: {videoID : string}) {
   const [userID, setUserID] = useState('')
   const [profilePicURL, setProfilePicURL] = useState('http://localhost:8000/media/profile_pics/default.png')
   const [comments, setComments] = useState([])
+  const router = useRouter();
 
   const getComments = () => {
 
@@ -138,7 +137,7 @@ function CommentSection({ videoID }: {videoID : string}) {
       method: 'GET',
     }).then((resp) => {
       if (resp.ok) resp.json().then((data) => setComments(data))
-    }).catch((error) => console.error(error))
+    }).catch(() => router.push("/error"))
 
   }
 
@@ -194,8 +193,7 @@ function VideoInfo({ tmbd_id, onObtainImdbId, onObtainName }: { tmbd_id: string,
         })
       }
     })
-    .catch((e) => {
-      console.log(e)
+    .catch(() => {
       alert("show info fetch error")
       push("/browse")
     })
@@ -345,8 +343,8 @@ export default function Watch() {
     })
 
     peer.on('error', (e: { message: string }) => {
-      console.log(e.message)
-      alert('remote peer error')
+      // console.log(e.message)
+      alert(`remote peer error ${e.message}`)
       push("/browse")
     })
 
@@ -397,7 +395,7 @@ export default function Watch() {
       .then(data => {
         sendMessage(`pass|custom_sub|${data['data']}@${subLang}|${video.tmdb_id}|||||`)
       })
-      .catch(err => console.log(err))
+      .catch(() => push("/error"))
     }
     else {
       updateMap(subLang, true)
@@ -431,9 +429,8 @@ export default function Watch() {
       setMagnet(magnet)
       setResolvingMagnet(false)
     })
-    .catch(err => {
+    .catch(() => {
       push("/browse")
-      console.error(err)
     })
 
   }, [video, videoName, imdbid])
@@ -462,12 +459,12 @@ export default function Watch() {
       setVideo(data)
       setTmdbid(data.tmdb_id)
     })
-    .catch((error) => console.error(error))
+    .catch(() => push('/error'))
 
     // mark video as watched
     fetch(`http://localhost:8000/api/videos/watched/${id}`, { method : 'POST', credentials: 'include' })
-    .then(() => console.log("video marked as watched"))
-    .catch((error) => console.error(error))
+    .then(() => {})
+    .catch(() => push('/error'))
       
   }, [id, user])
 
@@ -493,7 +490,7 @@ export default function Watch() {
     const tokens = lastMessage.data.split("|");
     const type = tokens[1]
     const message = tokens[2]
-    console.log('Message from server:', type);
+    // console.log('Message from server:', type);
 
     if (type == "handshake") {
       // we should have an answer here. 
@@ -519,7 +516,7 @@ export default function Watch() {
       .then((body) => {
         setVideo(body)
       })
-      .catch((e) => console.error(e))
+      .catch(() => push('/error'))
 
     }
     if (type == "custom_sub") {
@@ -544,7 +541,7 @@ export default function Watch() {
         if (subLang == "en") setSubPath(body.en_sub_file_name)
         else setSubPath(body.bm_sub_file_name)
       })
-      .catch((e) => console.error(e))
+      .catch(() => push('/error'))
     }
   }, [lastMessage])
   

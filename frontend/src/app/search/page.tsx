@@ -11,6 +11,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useInView } from "react-intersection-observer";
 import ShowGrid from "@/components/ShowGrid";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 const parseDate = (dateString: string) => {
   const [year, month, day] = dateString.split('-').map(Number);
@@ -41,12 +42,16 @@ export default function Search() {
   const [fromYear, setFromYear] = useState<Date>(new Date(0))
   const [toYear, setToYear] = useState<Date>(new Date())
   const [filterType, setFilterType] = useState('all')
+  const [sortDir, setSortDir] = useState('asc')
   const [filteredResults, setFilteredResults] = useState(results)
+
+  const router = useRouter();
 
   // translation
   const c = useTranslations('Common')
   const t = useTranslations('SearchPage')
   
+
   // debounce search query
   useEffect(() => setDebounceQuery(searchQuery), [debounce]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -59,7 +64,9 @@ export default function Search() {
       method: 'GET',
     }).then((data) => {
       if (data.ok) data.json().then((json) => setResults(json.results))
-    }).catch((error) => console.error(error))
+      else if (data.status == 400)
+        data.json().then((data) => alert(data))
+    }).catch(() => router.push('/error'))
 
     setHasMoreData(true);
     setNextPage(2);
@@ -78,7 +85,9 @@ export default function Search() {
         setNextPage((currPage) => currPage + 1)
         if (results.length === 0) setHasMoreData(false)
       })
-    }).catch((error) => console.error(error))
+      else if (data.status == 400)
+        data.json().then((data) => alert(JSON.stringify(data)))
+    }).catch(() => router.push('/error'))
   }
 
   // load more results for infinite scrolling
@@ -98,23 +107,30 @@ export default function Search() {
       if (resp.ok) resp.json().then((json) => {
         setShowInfo(json)
       })
-    }).catch((error) => {
-      console.error(error)
+      else if (resp.status == 400)
+        resp.json().then((data) => alert(JSON.stringify(data)))
+    }).catch(() => {
       setOpenModal(false)
+      router.push('/error')
     })
   }
 
   useEffect(() => {
-
+    let finalResults = []
+    
     if (filterOption === 'year') {
-      setFilteredResults(results.filter((data) => parseDate(data.date) >= fromYear && parseDate(data.date) <= toYear))
+      finalResults = results.filter((data) => parseDate(data.date) >= fromYear && parseDate(data.date) <= toYear)
     } else if (filterOption === 'type') {
-      setFilteredResults(filterType === 'all' ? results : results.filter((data) => data.type === filterType))
+      finalResults = filterType === 'all' ? results : results.filter((data) => data.type === filterType)
     } else {
-      setFilteredResults(results)
+      finalResults = results
     }
-  
-  }, [results, fromYear, toYear, filterOption, filterType])
+    
+    if (sortDir == "asc") finalResults = finalResults.sort((a,b) => a.title.localeCompare(b.title))
+    if (sortDir == "dsc") finalResults = finalResults.sort((a,b) => b.title.localeCompare(a.title))
+    setFilteredResults([...finalResults])
+
+  }, [results, fromYear, toYear, filterOption, filterType, sortDir])
 
   return (
     <div className="h-screen w-full overflow-x-hidden bg-white flex flex-col justify-between">
@@ -123,6 +139,13 @@ export default function Search() {
         <div className="flex flex-col md:flex-row justify-between md:pt-12 space-y-4 md:space-y-0">
           <div className="text-black text-md md:text-lg lg:text-4xl font-medium">{t('searchResultsFor') + ": \"" + searchQuery + "\""}</div>
           <div className="flex flex-row text-xs md:text-md lg:text-lg items-center space-x-4">
+          <div className="text-black ">{t('sortOrder') + ": "}</div>
+            <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
+            onChange={(e) => setSortDir(e.target.value)}>
+              <option key={1} value='asc'>{t('asc')}</option>
+              <option key={2} value='dsc'>{t('dsc')}</option>
+            </select>
+
             <div className="text-black ">{t('filterBy') + ": "}</div>
             <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
             onChange={(e) => setFilterOption(e.target.value)}>

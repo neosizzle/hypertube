@@ -60,6 +60,9 @@
 	"SearchPage": {
 		"searchResultsFor": "Search results for",
 		"filterBy": "Filter by",
+		"sortOrder": "Sort order",
+		"asc": "Ascending",
+		"dsc": "Descending",
 		"none": "None",
 		"type": "Type",
 		"year": "Year",

@@ -59,11 +59,10 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
       // log in success
       return data.json()
     })
-    .then((body) => {
-      console.log(JSON.stringify(body))
+    .then(() => {
+      // console.log(JSON.stringify(body))
     })
-    .catch((error) => {
-      console.error(error)
+    .catch(() => {
       router.push('/login')
     })
   }

@@ -67,8 +67,8 @@ function RegisterCard() {
         })
       }
     })
-    .catch((error) => {
-      console.error(error)
+    .catch(() => {
+      router.push('/error')
     })
   }
 

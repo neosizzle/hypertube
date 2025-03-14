@@ -1,12 +1,14 @@
 import { locales } from "@/i18n/config"
 import { setUserLocale } from "@/services/locale"
 import { useLocale, useTranslations } from "next-intl"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 export default function LocaleSelector({ className }: { className?: string }) {
 
   const l = useTranslations('Locales')
   const [selectedLocale, setSelectedLocale] = useState(useLocale())
+  const router = useRouter();
 
   const changeLang = async (locale: string) => {
     setUserLocale(locale)
@@ -24,8 +26,8 @@ export default function LocaleSelector({ className }: { className?: string }) {
       body: JSON.stringify({
         lang: selectedLocale
       })
-    }).catch((error) => {
-      console.error(error);
+    }).catch(() => {
+      router.push('/error')
     })
   }, [selectedLocale])
 

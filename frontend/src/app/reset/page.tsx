@@ -99,8 +99,8 @@ function ResetPasswordCard() {
       } else {
         setSuccess(true)
       }
-    }).catch((error) => {
-      console.error(error)
+    }).catch(() => {
+      router.push('/error')
     })
 
   }

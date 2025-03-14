@@ -50,7 +50,9 @@ function Episode({ info }: { info: EpisodeInfo }) {
 
     fetch(`http://localhost:8000/api/videos/fromTMDB?tmdb_id=${info.id}&type=tv`).then((resp) => {
       if (resp.ok) resp.json().then((data) => router.push(`/watch/${data.video_id}`))
-    }).catch((error) => console.error(error))
+      else if (resp.status == 400)
+        resp.json().then((data) => alert(JSON.stringify(data)))
+    }).catch(() => router.push("/error"))
   }
 
   return (
@@ -81,7 +83,9 @@ function Movie({ info }: { info: FullInfo }) {
 
     fetch(`http://localhost:8000/api/videos/fromTMDB?tmdb_id=${info.id}&type=movie`).then((resp) => {
       if (resp.ok) resp.json().then((data) => router.push(`/watch/${data.video_id}`))
-    }).catch((error) => console.error(error))
+      else if (resp.status == 400)
+        resp.json().then((data) => alert(JSON.stringify(data)))
+    }).catch(() => router.push("/error"))
   }
 
   return (
@@ -136,13 +140,16 @@ function Episodes({ info }: { info: FullInfo }) {
 
   const [seasonNum, setSeasonNum] = useState((info.details as TVInfo).seasons[0].season_number)
   const [episodes, setEpisodes] = useState<TVSeasonInfo | null>(null)
+  const router = useRouter();
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/show/tv/season?id=${info.id}&season_number=${seasonNum}`, {
       method: 'GET',
     }).then((data) => {
       if (data.ok) data.json().then((json) => setEpisodes(json))
-    }).catch((error) => console.error(error))
+        else if (data.status == 400)
+          data.json().then((data) => alert(data))
+    }).catch(() => router.push("/error"))
   }, [seasonNum, info])
 
   return (

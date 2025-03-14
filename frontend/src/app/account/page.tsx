@@ -67,8 +67,11 @@ function DeleteAccountConfirmationModal({ open, onClose }: { open: boolean, onCl
       if (response.ok) {
         router.push('/browse')
       }
-    }).catch((error) => {
-      console.error(error);
+      else {
+        router.push('/login')
+      }
+    }).catch(() => {
+      router.push('/error')
     })
   }
 
@@ -167,8 +170,12 @@ export default function Account() {
         body: formData
       }).then((response) => {
         if (response.ok) response.json().then((data) => setProfilePicURL(data.detail))
-      }).catch((error) => {
-        console.error(error);
+        else if (response.status == 400)
+          response.json().then((data) => alert(data))
+        else
+          router.push('/login')
+      }).catch(() => {
+        router.push('/error')
       })
     }
 
@@ -181,8 +188,12 @@ export default function Account() {
       credentials: 'include',
     }).then((response) => {
       if (response.ok) response.json().then((data) => setProfilePicURL(data.detail))
-    }).catch((error) => {
-      console.error(error);
+      else if (response.status == 400)
+        response.json().then((data) => alert(data))
+      else
+        router.push('/login')
+    }).catch(() => {
+      router.push("/error")
     })
   }
 
@@ -214,8 +225,8 @@ export default function Account() {
           setErrorMsg(formatJSONKey(key) + ": " + msg)
         })
       }
-    }).catch((error) => {
-      console.error(error);
+    }).catch(() => {
+      router.push('/error')
     })
   }
 
