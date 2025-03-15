@@ -395,7 +395,10 @@ export default function Watch() {
       .then(data => {
         sendMessage(`pass|custom_sub|${data['data']}@${subLang}|${video.tmdb_id}|||||`)
       })
-      .catch(() => push("/error"))
+      .catch((e) => {
+        if (typeof e != "string")
+          push("/error")
+      })
     }
     else {
       updateMap(subLang, true)

@@ -118,7 +118,6 @@ export default function Account() {
   const [lastName, setLastName] = useState('')
   const [firstName, setFirstName] = useState('')
   const [profilePicURL, setProfilePicURL] = useState('')
-  const [preferredDims, setPreferredDims] = useState(1)
   const [isEdit, setEdit] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [updateSuccess, setUpdateSuccess] = useState(false)
@@ -137,7 +136,6 @@ export default function Account() {
           setFirstName(json.first_name)
           setLastName(json.last_name)
           setProfilePicURL(json.profile_picture)
-          setPreferredDims(json.prefered_stream_dimensions)
         })
       }
     })

@@ -42,7 +42,6 @@ export default function Search() {
   const [fromYear, setFromYear] = useState<Date>(new Date(0))
   const [toYear, setToYear] = useState<Date>(new Date())
   const [filterType, setFilterType] = useState('all')
-  const [sortDir, setSortDir] = useState('asc')
   const [filteredResults, setFilteredResults] = useState(results)
 
   const router = useRouter();
@@ -126,11 +125,9 @@ export default function Search() {
       finalResults = results
     }
     
-    if (sortDir == "asc") finalResults = finalResults.sort((a,b) => a.title.localeCompare(b.title))
-    if (sortDir == "dsc") finalResults = finalResults.sort((a,b) => b.title.localeCompare(a.title))
     setFilteredResults([...finalResults])
 
-  }, [results, fromYear, toYear, filterOption, filterType, sortDir])
+  }, [results, fromYear, toYear, filterOption, filterType])
 
   return (
     <div className="h-screen w-full overflow-x-hidden bg-white flex flex-col justify-between">
@@ -140,11 +137,19 @@ export default function Search() {
           <div className="text-black text-md md:text-lg lg:text-4xl font-medium">{t('searchResultsFor') + ": \"" + searchQuery + "\""}</div>
           <div className="flex flex-row text-xs md:text-md lg:text-lg items-center space-x-4">
           <div className="text-black ">{t('sortOrder') + ": "}</div>
-            <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
-            onChange={(e) => setSortDir(e.target.value)}>
-              <option key={1} value='asc'>{t('asc')}</option>
-              <option key={2} value='dsc'>{t('dsc')}</option>
-            </select>
+          <div>
+          <button
+          onClick={() => setFilteredResults([...filteredResults.sort((a,b) =>  a.title.localeCompare(b.title))])}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            {t('asc')}
+          </button>
+          <button
+          onClick={() => setFilteredResults([...filteredResults.sort((a,b) =>  b.title.localeCompare(a.title))])}
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+            {t('dsc')}
+          </button>
+        </div>
+            
 
             <div className="text-black ">{t('filterBy') + ": "}</div>
             <select className="text-black w-auto h-12 items-center px-2 bg-transparent hover:bg-black/10 outline-none rounded-lg"
