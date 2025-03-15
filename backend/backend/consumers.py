@@ -172,7 +172,7 @@ class SignalConsumer(AsyncConsumer):
             # Get first match of a media file
             try:
                 media = next(a for a in torrent
-                             if a.is_media and not 'sample' in a.path.lower())
+                             if a.is_media and not any(sub in a.path.lower() for sub in ['sample', 'png', 'jpg', 'jpeg']))
                 async with self.lock:
                     # send socket message to inform frontend on path name so they can save to db
                     # unessacary indirection, better way is to save it directly here
