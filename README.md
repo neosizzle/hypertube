@@ -1,5 +1,5 @@
 # /dev/log for hypertube
-Personal movie / anime streaming site where the content are obtained via bittorrent protocol built with nextjs and django.
+Personal movie / anime streaming site where the content are obtained via bittorrent protocol built with nextjs and django. Mega thanks for [laian](https://github.com/LaiAnTan) for helping on this project
 
 ## Design, Demo and screenshots
 ![image](https://hackmd.io/_uploads/HyZ3a0cokl.png)
@@ -65,6 +65,25 @@ The mp4 files are converted to mkv on the fly using [ffmpeg-python](https://gith
 > NOTE: This is not required anymore as MediaStream API is compatible for all video files within our obsevation
 
 > NOTE: The codecs supported by webRTC can be referred [here](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/WebRTC_codecs), the package we use to initialize streams (aiortcs mediaplayer) conviniently converts the files to the correct codecs for us 
+
+FFmpeg is a universal media converter, it can read from a variety of media inputs such as a video file, a webcam, a live streaming service to do some processing and output it to various media output devices / sources.
+
+By being able to create and manipulate certain ffmpeg components, the user is able to do video / audio processing within the capabilities of ffmpeg. The key components of ffmpeg are follows
+
+- Demuxer
+aka "demultiplexers", they take a media source and extracts metadata and individual streams of the media source into encoded (compressed) packets for the video / audio / subtitle streams
+
+- Decoder
+Takes encoded packets as inputs and decodes them into raw frames (data) to pass on to other components
+
+- Filtergraph
+This component is responsible for transforming raw packets into whatever the user desires and the output of this component are the modified raw packets
+
+- Encoder
+The reverse of the decoder, takes in raw packets and compress them into packets of their respective codecs / formats. The output of this component usually goes to the Muxer
+
+- Muxer
+Reverse of the muxer, takes the packets outputted by the encoder to combine and send them to an output source. 
 
 ## External search APIs
 To facilitate the discovery feature, we offloaded the search function to two external APIs, [OMDB](https://www.omdbapi.com) and [TMDB](https://developer.themoviedb.org/reference/intro/getting-started). Both of these offer search and filter functions, however we use OMDB as our source of truth and the TMDB acts as a backup complementing the contents which OMDB is lacking. OMDB results will always be the priority in the case of a conflict.
